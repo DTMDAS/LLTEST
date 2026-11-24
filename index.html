@@ -1,2128 +1,1824 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  Wallet, PlusCircle, Send, Bell, MessageSquare, ShieldCheck,
-  Users, FileText, Settings, QrCode, LogOut, CheckCircle2,
-  AlertCircle, Upload, Image as ImageIcon, IndianRupee,
-  Palette, Plus, Trash2, KeyRound, Phone, User, Calendar,
-  Lock, ArrowRight, Sparkles, RefreshCw, X, Check, Clock
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Seva & Exam Portal</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    /* Smooth custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
 
-// ============================================================================
-// DEFAULT DATA & THEME CONFIGURATIONS
-// ============================================================================
-const THEMES = {
-  blue: {
-    name: 'Royal Blue (CSC Default)',
-    primary: 'bg-blue-600 hover:bg-blue-700',
-    primaryText: 'text-blue-600',
-    primaryLight: 'bg-blue-50 text-blue-700 border-blue-200',
-    gradient: 'from-blue-700 via-blue-600 to-indigo-700',
-    ring: 'focus:ring-blue-500',
-    badge: 'bg-blue-100 text-blue-800',
-  },
-  emerald: {
-    name: 'Emerald Green',
-    primary: 'bg-emerald-600 hover:bg-emerald-700',
-    primaryText: 'text-emerald-600',
-    primaryLight: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    gradient: 'from-emerald-700 via-emerald-600 to-teal-700',
-    ring: 'focus:ring-emerald-500',
-    badge: 'bg-emerald-100 text-emerald-800',
-  },
-  indigo: {
-    name: 'Deep Indigo',
-    primary: 'bg-indigo-600 hover:bg-indigo-700',
-    primaryText: 'text-indigo-600',
-    primaryLight: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    gradient: 'from-indigo-800 via-indigo-600 to-purple-700',
-    ring: 'focus:ring-indigo-500',
-    badge: 'bg-indigo-100 text-indigo-800',
-  },
-  purple: {
-    name: 'Royal Purple',
-    primary: 'bg-purple-600 hover:bg-purple-700',
-    primaryText: 'text-purple-600',
-    primaryLight: 'bg-purple-50 text-purple-700 border-purple-200',
-    gradient: 'from-purple-800 via-purple-600 to-fuchsia-700',
-    ring: 'focus:ring-purple-500',
-    badge: 'bg-purple-100 text-purple-800',
-  },
-  rose: {
-    name: 'Crimson Rose',
-    primary: 'bg-rose-600 hover:bg-rose-700',
-    primaryText: 'text-rose-600',
-    primaryLight: 'bg-rose-50 text-rose-700 border-rose-200',
-    gradient: 'from-rose-700 via-rose-600 to-orange-600',
-    ring: 'focus:ring-rose-500',
-    badge: 'bg-rose-100 text-rose-800',
-  },
-};
+  <!-- Toast Notification Banner -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 hidden max-w-sm">
+    <div id="toast-box" class="flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-sm font-semibold bg-slate-900 text-white border-slate-700">
+      <span id="toast-icon"></span>
+      <span id="toast-text"></span>
+    </div>
+  </div>
 
-// Default clean SVG QR code data URI (used until Admin uploads their own QR)
-const DEFAULT_QR_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220">
-  <rect width="220" height="220" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="4"/>
-  <rect x="24" y="24" width="56" height="56" rx="8" fill="none" stroke="#0f172a" stroke-width="8"/>
-  <rect x="40" y="40" width="24" height="24" rx="3" fill="#0f172a"/>
-  <rect x="140" y="24" width="56" height="56" rx="8" fill="none" stroke="#0f172a" stroke-width="8"/>
-  <rect x="156" y="40" width="24" height="24" rx="3" fill="#0f172a"/>
-  <rect x="24" y="140" width="56" height="56" rx="8" fill="none" stroke="#0f172a" stroke-width="8"/>
-  <rect x="40" y="156" width="24" height="24" rx="3" fill="#0f172a"/>
-  <rect x="96" y="32" width="12" height="12" fill="#0f172a"/>
-  <rect x="116" y="48" width="12" height="28" fill="#0f172a"/>
-  <rect x="96" y="96" width="28" height="28" rx="6" fill="#2563eb"/>
-  <rect x="32" y="96" width="24" height="12" fill="#0f172a"/>
-  <rect x="68" y="108" width="16" height="16" fill="#0f172a"/>
-  <rect x="140" y="96" width="24" height="12" fill="#0f172a"/>
-  <rect x="176" y="104" width="16" height="28" fill="#0f172a"/>
-  <rect x="96" y="140" width="16" height="24" fill="#0f172a"/>
-  <rect x="124" y="156" width="32" height="12" fill="#0f172a"/>
-  <rect x="168" y="144" width="24" height="24" fill="#0f172a"/>
-  <rect x="104" y="180" width="44" height="12" fill="#0f172a"/>
-  <text x="110" y="212" font-family="sans-serif" font-size="10" font-weight="bold" fill="#475569" text-anchor="middle">UPLOAD YOUR QR IN ADMIN</text>
-</svg>
-`)}`;
+  <!-- Main Root App Container -->
+  <div id="app" class="flex-1 flex flex-col"></div>
 
-const DEFAULT_SERVICES = [
-  {
-    id: 'srv-default-1',
-    name: 'Exam Application / Admit Card & Result Service',
-    fee: 200,
-    description: 'Application Number, DOB aur Exam Password / OTP daal kar form submit karein.',
-  },
-];
+  <!-- Subtle Footer with GitHub Pages Route Switcher -->
+  <footer class="bg-white border-t border-slate-200 py-3.5 px-4 text-xs text-slate-500 mt-auto">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p id="footer-copy">© 2026 Digital Seva & Exam Portal. All rights reserved.</p>
+      <div class="flex items-center gap-3">
+        <span>Active Route: <code id="route-indicator" class="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-mono">/</code></span>
+        <button onclick="toggleAdminRoute()" id="route-switch-btn" class="text-slate-700 hover:text-slate-950 underline font-semibold cursor-pointer">
+          Admin Panel (/admin) →
+        </button>
+      </div>
+    </div>
+  </footer>
 
-const DEFAULT_SETTINGS = {
-  siteName: 'Digital Seva & Exam Portal',
-  tagline: 'Fast & Secure Online Application & Wallet Service',
-  theme: 'blue',
-  upiId: 'merchant@upi',
-  qrImage: DEFAULT_QR_SVG,
-  minDeposit: 200,
-  adminPass: 'admin123',
-};
+  <!-- Modals Container -->
+  <div id="modals-root"></div>
 
-// Helper for safe localStorage state
-function usePersistedState(key, initialValue) {
-  const [state, setState] = useState(() => {
-    try {
-      const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : initialValue;
-    } catch {
-      return initialValue;
-    }
-  });
+  <script>
+    // =========================================================================
+    // 1. THEME DEFINITIONS & DEFAULT QR SVG
+    // =========================================================================
+    const THEMES = {
+      indigo: {
+        name: 'Royal Indigo',
+        btn: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+        text: 'text-indigo-600',
+        light: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+        gradient: 'from-indigo-800 via-indigo-600 to-blue-700',
+        ring: 'focus:ring-indigo-500',
+        badge: 'bg-indigo-100 text-indigo-800',
+      },
+      emerald: {
+        name: 'Emerald Green',
+        btn: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+        text: 'text-emerald-600',
+        light: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        gradient: 'from-emerald-800 via-emerald-600 to-teal-700',
+        ring: 'focus:ring-emerald-500',
+        badge: 'bg-emerald-100 text-emerald-800',
+      },
+      rose: {
+        name: 'Crimson Rose',
+        btn: 'bg-rose-600 hover:bg-rose-700 text-white',
+        text: 'text-rose-600',
+        light: 'bg-rose-50 text-rose-700 border-rose-200',
+        gradient: 'from-rose-800 via-rose-600 to-orange-600',
+        ring: 'focus:ring-rose-500',
+        badge: 'bg-rose-100 text-rose-800',
+      },
+      amber: {
+        name: 'Royal Amber',
+        btn: 'bg-amber-600 hover:bg-amber-700 text-white',
+        text: 'text-amber-600',
+        light: 'bg-amber-50 text-amber-800 border-amber-200',
+        gradient: 'from-amber-700 via-amber-600 to-orange-600',
+        ring: 'focus:ring-amber-500',
+        badge: 'bg-amber-100 text-amber-800',
+      },
+      slate: {
+        name: 'Executive Slate',
+        btn: 'bg-slate-800 hover:bg-slate-900 text-white',
+        text: 'text-slate-800',
+        light: 'bg-slate-100 text-slate-800 border-slate-300',
+        gradient: 'from-slate-900 via-slate-800 to-slate-700',
+        ring: 'focus:ring-slate-600',
+        badge: 'bg-slate-200 text-slate-800',
+      },
+    };
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(state));
-    } catch (e) {
-      console.error('Storage quota warning:', e);
-    }
-  }, [key, state]);
+    const DEFAULT_QR_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220">
+        <rect width="220" height="220" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="4"/>
+        <rect x="24" y="24" width="56" height="56" rx="8" fill="none" stroke="#0f172a" stroke-width="8"/>
+        <rect x="40" y="40" width="24" height="24" rx="3" fill="#0f172a"/>
+        <rect x="140" y="24" width="56" height="56" rx="8" fill="none" stroke="#0f172a" stroke-width="8"/>
+        <rect x="156" y="40" width="24" height="24" rx="3" fill="#0f172a"/>
+        <rect x="24" y="140" width="56" height="56" rx="8" fill="none" stroke="#0f172a" stroke-width="8"/>
+        <rect x="40" y="156" width="24" height="24" rx="3" fill="#0f172a"/>
+        <rect x="96" y="32" width="12" height="12" fill="#0f172a"/>
+        <rect x="116" y="48" width="12" height="28" fill="#0f172a"/>
+        <rect x="96" y="96" width="28" height="28" rx="6" fill="#4f46e5"/>
+        <rect x="32" y="96" width="24" height="12" fill="#0f172a"/>
+        <rect x="68" y="108" width="16" height="16" fill="#0f172a"/>
+        <rect x="140" y="96" width="24" height="12" fill="#0f172a"/>
+        <rect x="176" y="104" width="16" height="28" fill="#0f172a"/>
+        <rect x="96" y="140" width="16" height="24" fill="#0f172a"/>
+        <rect x="124" y="156" width="32" height="12" fill="#0f172a"/>
+        <rect x="168" y="144" width="24" height="24" fill="#0f172a"/>
+        <rect x="104" y="180" width="44" height="12" fill="#0f172a"/>
+        <text x="110" y="212" font-family="sans-serif" font-size="10" font-weight="bold" fill="#475569" text-anchor="middle">UPLOAD YOUR QR IN ADMIN</text>
+      </svg>
+    `)}`;
 
-  // Listen to changes from other tabs
-  useEffect(() => {
-    const handleStorage = (e) => {
-      if (e.key === key && e.newValue) {
-        try {
-          setState(JSON.parse(e.newValue));
-        } catch {}
+    // =========================================================================
+    // 2. APPLICATION STATE & LOCALSTORAGE PERSISTENCE
+    // =========================================================================
+    const STORAGE_KEYS = {
+      SETTINGS: 'gh_portal_settings_v1',
+      USERS: 'gh_portal_users_v1',
+      SERVICES: 'gh_portal_services_v1',
+      APPS: 'gh_portal_apps_v1',
+      DEPOSITS: 'gh_portal_deposits_v1',
+      NOTIFS: 'gh_portal_notifs_v1',
+      CHATS: 'gh_portal_chats_v1',
+      CURRENT_USER: 'gh_portal_curr_user_v1',
+      ADMIN_AUTH: 'gh_portal_admin_auth_v1',
+    };
+
+    function loadData(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
       }
+    }
+
+    function saveData(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        showToast('Storage full! Try uploading smaller images.', 'error');
+      }
+    }
+
+    let state = {
+      settings: loadData(STORAGE_KEYS.SETTINGS, {
+        siteName: 'Digital Seva & Exam Portal',
+        tagline: 'Fast & Secure Online Application & Wallet Service',
+        theme: 'indigo',
+        upiId: 'merchant@upi',
+        qrImage: DEFAULT_QR_SVG,
+        minDeposit: 200,
+        adminPass: 'admin123',
+      }),
+      users: loadData(STORAGE_KEYS.USERS, []),
+      services: loadData(STORAGE_KEYS.SERVICES, [
+        {
+          id: 'srv-1',
+          name: 'Exam / Application Form',
+          fee: 200,
+          description: 'Application Number, DOB aur Exam Password / OTP daal kar submit karein.',
+        },
+      ]),
+      applications: loadData(STORAGE_KEYS.APPS, []),
+      deposits: loadData(STORAGE_KEYS.DEPOSITS, []),
+      notifications: loadData(STORAGE_KEYS.NOTIFS, []),
+      messages: loadData(STORAGE_KEYS.CHATS, []),
+      currentUserId: loadData(STORAGE_KEYS.CURRENT_USER, null),
+      isAdminLoggedIn: loadData(STORAGE_KEYS.ADMIN_AUTH, false),
+
+      // UI Transient States
+      authTab: 'login', // 'login' | 'register'
+      userTab: 'apply', // 'apply' | 'history' | 'wallet'
+      adminTab: 'users', // 'users' | 'apps' | 'deposits' | 'chat' | 'settings'
+      selectedChatUserId: null,
+      showAddMoneyModal: false,
+      showUserChatDrawer: false,
+      transferModalUserId: null,
+      notifModalUserId: null,
+      viewUserAppsId: null,
+      tempNotifImageBase64: '',
     };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [key]);
 
-  return [state, setState];
-}
+    function syncAllStorage() {
+      saveData(STORAGE_KEYS.SETTINGS, state.settings);
+      saveData(STORAGE_KEYS.USERS, state.users);
+      saveData(STORAGE_KEYS.SERVICES, state.services);
+      saveData(STORAGE_KEYS.APPS, state.applications);
+      saveData(STORAGE_KEYS.DEPOSITS, state.deposits);
+      saveData(STORAGE_KEYS.NOTIFS, state.notifications);
+      saveData(STORAGE_KEYS.CHATS, state.messages);
+      saveData(STORAGE_KEYS.CURRENT_USER, state.currentUserId);
+      saveData(STORAGE_KEYS.ADMIN_AUTH, state.isAdminLoggedIn);
+    }
 
-// ============================================================================
-// MAIN APPLICATION COMPONENT
-// ============================================================================
-export default function App() {
-  // Route detection: supports URL ending in /admin OR hash #/admin
-  const checkIsAdminRoute = () => {
-    const path = window.location.pathname.toLowerCase();
-    const hash = window.location.hash.toLowerCase();
-    return path.endsWith('/admin') || hash.includes('/admin');
-  };
+    // Listen to changes across multiple tabs (e.g., User in Tab 1, Admin in Tab 2)
+    window.addEventListener('storage', (e) => {
+      if (Object.values(STORAGE_KEYS).includes(e.key)) {
+        state.settings = loadData(STORAGE_KEYS.SETTINGS, state.settings);
+        state.users = loadData(STORAGE_KEYS.USERS, state.users);
+        state.services = loadData(STORAGE_KEYS.SERVICES, state.services);
+        state.applications = loadData(STORAGE_KEYS.APPS, state.applications);
+        state.deposits = loadData(STORAGE_KEYS.DEPOSITS, state.deposits);
+        state.notifications = loadData(STORAGE_KEYS.NOTIFS, state.notifications);
+        state.messages = loadData(STORAGE_KEYS.CHATS, state.messages);
+        render();
+      }
+    });
 
-  const [isAdminRoute, setIsAdminRoute] = useState(checkIsAdminRoute);
+    // =========================================================================
+    // 3. ROUTING (SUPPORTS /admin OR #/admin FOR GITHUB PAGES)
+    // =========================================================================
+    function isAdminRoute() {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      return path.endsWith('/admin') || hash.includes('/admin');
+    }
 
-  useEffect(() => {
-    const onLocationChange = () => setIsAdminRoute(checkIsAdminRoute());
-    window.addEventListener('popstate', onLocationChange);
-    window.addEventListener('hashchange', onLocationChange);
-    return () => {
-      window.removeEventListener('popstate', onLocationChange);
-      window.removeEventListener('hashchange', onLocationChange);
-    };
-  }, []);
-
-  const navigateRoute = (toAdmin) => {
-    try {
-      if (toAdmin) {
-        window.history.pushState({}, '', '#/admin');
+    function toggleAdminRoute() {
+      if (isAdminRoute()) {
+        window.location.hash = '/';
       } else {
-        window.history.pushState({}, '', '#/');
+        window.location.hash = '/admin';
       }
-    } catch {
-      window.location.hash = toAdmin ? '/admin' : '/';
-    }
-    setIsAdminRoute(toAdmin);
-  };
-
-  // Global Persisted Data
-  const [settings, setSettings] = usePersistedState('portal_settings_v1', DEFAULT_SETTINGS);
-  const [users, setUsers] = usePersistedState('portal_users_v1', []);
-  const [services, setServices] = usePersistedState('portal_services_v1', DEFAULT_SERVICES);
-  const [applications, setApplications] = usePersistedState('portal_apps_v1', []);
-  const [deposits, setDeposits] = usePersistedState('portal_deposits_v1', []);
-  const [notifications, setNotifications] = usePersistedState('portal_notifs_v1', []);
-  const [messages, setMessages] = usePersistedState('portal_chats_v1', []);
-
-  // Auth Sessions
-  const [currentUserId, setCurrentUserId] = usePersistedState('portal_current_user_v1', null);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = usePersistedState('portal_admin_auth_v1', false);
-
-  // Toast Feedback Banner
-  const [toast, setToast] = useState(null);
-  const showToast = (text, type = 'success') => {
-    setToast({ text, type });
-    setTimeout(() => setToast(null), 4000);
-  };
-
-  const theme = THEMES[settings.theme] || THEMES.blue;
-  const currentUser = users.find((u) => u.id === currentUserId) || null;
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Global Toast Notification */}
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm animate-bounce">
-          <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium ${
-              toast.type === 'error'
-                ? 'bg-red-600 text-white border-red-700'
-                : 'bg-slate-900 text-white border-slate-700'
-            }`}
-          >
-            {toast.type === 'error' ? (
-              <AlertCircle className="w-5 h-5 shrink-0 text-red-200" />
-            ) : (
-              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
-            )}
-            <span>{toast.text}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Main View Switcher */}
-      <div className="flex-1">
-        {isAdminRoute ? (
-          <AdminPortal
-            settings={settings}
-            setSettings={setSettings}
-            users={users}
-            setUsers={setUsers}
-            services={services}
-            setServices={setServices}
-            applications={applications}
-            setApplications={setApplications}
-            deposits={deposits}
-            setDeposits={setDeposits}
-            notifications={notifications}
-            setNotifications={setNotifications}
-            messages={messages}
-            setMessages={setMessages}
-            isAdminLoggedIn={isAdminLoggedIn}
-            setIsAdminLoggedIn={setIsAdminLoggedIn}
-            theme={theme}
-            showToast={showToast}
-            goToUserSite={() => navigateRoute(false)}
-          />
-        ) : (
-          <UserPortal
-            settings={settings}
-            users={users}
-            setUsers={setUsers}
-            services={services}
-            applications={applications}
-            setApplications={setApplications}
-            deposits={deposits}
-            setDeposits={setDeposits}
-            notifications={notifications}
-            messages={messages}
-            setMessages={setMessages}
-            currentUser={currentUser}
-            setCurrentUserId={setCurrentUserId}
-            theme={theme}
-            showToast={showToast}
-          />
-        )}
-      </div>
-
-      {/* Subtle Footer with Route Helper for GitHub/Testing */}
-      <footer className="bg-white border-t border-slate-200 py-3 px-4 text-xs text-slate-500">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p>© {new Date().getFullYear()} {settings.siteName}. All rights reserved.</p>
-          <div className="flex items-center gap-3">
-            <span>URL Route: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">{isAdminRoute ? '/admin' : '/'}</code></span>
-            <button
-              onClick={() => navigateRoute(!isAdminRoute)}
-              className="text-slate-600 hover:text-slate-900 underline font-medium"
-            >
-              {isAdminRoute ? '← User Site par jayein' : 'Admin Panel (/admin) →'}
-            </button>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-// ============================================================================
-// USER PORTAL (LOGIN / REGISTER + DASHBOARD)
-// ============================================================================
-function UserPortal({
-  settings,
-  users,
-  setUsers,
-  services,
-  applications,
-  setApplications,
-  deposits,
-  setDeposits,
-  notifications,
-  messages,
-  setMessages,
-  currentUser,
-  setCurrentUserId,
-  theme,
-  showToast,
-}) {
-  // Auth Tab State
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
-  const [name, setName] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [password, setPassword] = useState('');
-
-  // Dashboard Modals / Drawers
-  const [showAddMoney, setShowAddMoney] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [activeTab, setActiveTab] = useState('apply'); // 'apply' | 'history' | 'notifications'
-
-  // Add Balance Form
-  const [addAmount, setAddAmount] = useState('200');
-  const [utrNumber, setUtrNumber] = useState('');
-
-  // Service Application Form
-  const [selectedServiceId, setSelectedServiceId] = useState(services[0]?.id || '');
-  const [appNumber, setAppNumber] = useState('');
-  const [dob, setDob] = useState('');
-  const [examPassOtp, setExamPassOtp] = useState('');
-
-  // Help Chat Input
-  const [chatText, setChatText] = useState('');
-  const chatEndRef = useRef(null);
-
-  useEffect(() => {
-    if (services.length > 0 && !services.find((s) => s.id === selectedServiceId)) {
-      setSelectedServiceId(services[0].id);
-    }
-  }, [services, selectedServiceId]);
-
-  useEffect(() => {
-    if (showChat) {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [showChat, messages]);
-
-  // Handle User Registration
-  const handleRegister = (e) => {
-    e.preventDefault();
-    const cleanMobile = mobile.trim();
-    if (!name.trim() || !cleanMobile || !password.trim()) {
-      showToast('Kripya Name, Mobile Number aur Password bharein.', 'error');
-      return;
-    }
-    if (cleanMobile.length < 10) {
-      showToast('Sahi 10-digit Mobile Number daalein.', 'error');
-      return;
-    }
-    if (users.some((u) => u.mobile === cleanMobile)) {
-      showToast('Ye Mobile Number pehle se registered hai! Login karein.', 'error');
-      return;
+      render();
     }
 
-    const newUser = {
-      id: 'usr_' + Date.now(),
-      name: name.trim(),
-      mobile: cleanMobile,
-      password: password.trim(),
-      balance: 0,
-      createdAt: new Date().toLocaleString(),
-    };
+    window.addEventListener('hashchange', render);
+    window.addEventListener('popstate', render);
 
-    setUsers((prev) => [newUser, ...prev]);
-    setCurrentUserId(newUser.id);
-    setName('');
-    setMobile('');
-    setPassword('');
-    showToast(`Swagat hai ${newUser.name}! Account ban gaya hai.`);
-  };
+    // =========================================================================
+    // 4. UTILITIES (TOAST, ESCAPE HTML, FILE TO BASE64)
+    // =========================================================================
+    let toastTimeout = null;
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const box = document.getElementById('toast-box');
+      const text = document.getElementById('toast-text');
+      const icon = document.getElementById('toast-icon');
 
-  // Handle User Login
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const found = users.find(
-      (u) => u.mobile === mobile.trim() && u.password === password.trim()
-    );
-    if (!found) {
-      showToast('Galat Mobile Number ya Password!', 'error');
-      return;
-    }
-    setCurrentUserId(found.id);
-    setMobile('');
-    setPassword('');
-    showToast(`Welcome back, ${found.name}!`);
-  };
+      text.textContent = msg;
+      if (type === 'error') {
+        box.className = 'flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-sm font-semibold bg-red-600 text-white border-red-700';
+        icon.innerHTML = '<i data-lucide="alert-circle" class="w-5 h-5 text-red-200"></i>';
+      } else {
+        box.className = 'flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-sm font-semibold bg-slate-900 text-white border-slate-700';
+        icon.innerHTML = '<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>';
+      }
 
-  // Handle Add Balance Request (Min ₹200)
-  const handleAddBalanceSubmit = (e, instantApprove = false) => {
-    e.preventDefault();
-    const amt = Number(addAmount);
-    const minAmt = Number(settings.minDeposit) || 200;
+      container.classList.remove('hidden');
+      lucide.createIcons();
 
-    if (isNaN(amt) || amt < minAmt) {
-      showToast(`Minimum ₹${minAmt} add karna zaroori hai!`, 'error');
-      return;
-    }
-    if (!instantApprove && !utrNumber.trim()) {
-      showToast('Payment karne ke baad UTR / Transaction ID daalein.', 'error');
-      return;
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        container.classList.add('hidden');
+      }, 4000);
     }
 
-    const req = {
-      id: 'dep_' + Date.now(),
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userMobile: currentUser.mobile,
-      amount: amt,
-      utr: instantApprove ? 'INSTANT-DEMO-' + Math.floor(100000 + Math.random() * 900000) : utrNumber.trim(),
-      status: instantApprove ? 'approved' : 'pending',
-      createdAt: new Date().toLocaleString(),
-    };
-
-    setDeposits((prev) => [req, ...prev]);
-
-    if (instantApprove) {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === currentUser.id ? { ...u, balance: u.balance + amt } : u))
-      );
-      showToast(`₹${amt} aapke wallet me add ho gaya hai!`);
-    } else {
-      showToast(`₹${amt} ki request Admin ko bhej di gayi hai. Approval ke baad balance jud jayega.`);
+    function esc(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
-    setUtrNumber('');
-    setAddAmount(String(minAmt));
-    setShowAddMoney(false);
-  };
-
-  // Handle Service Form Submit (Deducts Fee e.g. ₹200)
-  const handleServiceSubmit = (e) => {
-    e.preventDefault();
-    const service = services.find((s) => s.id === selectedServiceId) || services[0];
-    if (!service) return;
-
-    if (!appNumber.trim() || !dob.trim() || !examPassOtp.trim()) {
-      showToast('Application Number, DOB aur Exam Password / OTP sabhi bharein.', 'error');
-      return;
+    function fileToBase64(file, callback) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onloadend = () => callback(reader.result);
+      reader.readAsDataURL(file);
     }
 
-    const fee = Number(service.fee) || 200;
-    if (currentUser.balance < fee) {
-      showToast(
-        `Insufficient Balance! Is service ki fees ₹${fee} hai. Pehle upar "Add Balance" se paise add karein.`,
-        'error'
-      );
-      setShowAddMoney(true);
-      return;
+    // =========================================================================
+    // 5. USER PORTAL ACTIONS
+    // =========================================================================
+    function switchAuthTab(tab) {
+      state.authTab = tab;
+      render();
     }
 
-    // Deduct balance
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === currentUser.id ? { ...u, balance: u.balance - fee } : u
-      )
-    );
-
-    // Save Application
-    const newApp = {
-      id: 'app_' + Date.now(),
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userMobile: currentUser.mobile,
-      serviceName: service.name,
-      feePaid: fee,
-      appNumber: appNumber.trim(),
-      dob: dob.trim(),
-      examPassOtp: examPassOtp.trim(),
-      status: 'Submitted',
-      createdAt: new Date().toLocaleString(),
-    };
-
-    setApplications((prev) => [newApp, ...prev]);
-    setAppNumber('');
-    setDob('');
-    setExamPassOtp('');
-    showToast(`Application Submit ho gayi! Wallet se ₹${fee} cut hue hain.`);
-    setActiveTab('history');
-  };
-
-  // Send Help Chat Message to Admin
-  const handleSendChat = (e) => {
-    e.preventDefault();
-    if (!chatText.trim()) return;
-
-    const newMsg = {
-      id: 'msg_' + Date.now(),
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userMobile: currentUser.mobile,
-      sender: 'user',
-      text: chatText.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      readByAdmin: false,
-    };
-
-    setMessages((prev) => [...prev, newMsg]);
-    setChatText('');
-  };
-
-  // If NOT Logged In -> Show Register / Login Screen
-  if (!currentUser) {
-    return (
-      <div className="min-h-[calc(100vh-50px)] flex flex-col">
-        {/* Top Brand Header */}
-        <header className={`bg-gradient-to-r ${theme.gradient} text-white py-6 px-4 shadow-md`}>
-          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-white/15 p-2.5 rounded-xl backdrop-blur-sm">
-                <ShieldCheck className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{settings.siteName}</h1>
-                <p className="text-xs sm:text-sm text-white/80">{settings.tagline}</p>
-              </div>
-            </div>
-            <span className="text-xs bg-white/15 px-3 py-1.5 rounded-full font-medium">
-              24x7 Online Seva Portal
-            </span>
-          </div>
-        </header>
-
-        {/* Login / Register Card */}
-        <main className="flex-1 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-            {/* Switch Tabs */}
-            <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-50">
-              <button
-                onClick={() => setAuthMode('login')}
-                className={`py-3.5 text-sm font-semibold transition ${
-                  authMode === 'login'
-                    ? `bg-white ${theme.primaryText} border-b-2 border-current`
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                User Login
-              </button>
-              <button
-                onClick={() => setAuthMode('register')}
-                className={`py-3.5 text-sm font-semibold transition ${
-                  authMode === 'register'
-                    ? `bg-white ${theme.primaryText} border-b-2 border-current`
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                New Register
-              </button>
-            </div>
-
-            <form
-              onSubmit={authMode === 'login' ? handleLogin : handleRegister}
-              className="p-6 space-y-4"
-            >
-              <div className="text-center mb-2">
-                <h2 className="text-lg font-bold text-slate-800">
-                  {authMode === 'login' ? 'Apne Account me Login Karein' : 'Naya Account Banayein'}
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {authMode === 'login'
-                    ? 'Mobile Number aur Password daalein'
-                    : 'Name, Mobile Number aur Password daal kar register karein'}
-                </p>
-              </div>
-
-              {authMode === 'register' && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Full Name (Poora Naam)
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Apna naam likhein"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className={`w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}`}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Mobile Number
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="tel"
-                    required
-                    maxLength={10}
-                    placeholder="10-digit mobile number"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
-                    className={`w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}`}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="password"
-                    required
-                    placeholder="Apna password daalein"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}`}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className={`w-full ${theme.primary} text-white font-semibold py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2`}
-              >
-                <span>{authMode === 'login' ? 'Login Karein' : 'Register & Login'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Logged-In User Data Filters
-  const myApplications = applications.filter((a) => a.userId === currentUser.id);
-  const myNotifications = notifications.filter((n) => n.userId === currentUser.id);
-  const myMessages = messages.filter((m) => m.userId === currentUser.id);
-  const myDeposits = deposits.filter((d) => d.userId === currentUser.id);
-
-  return (
-    <div className="min-h-[calc(100vh-50px)] flex flex-col">
-      {/* Top Header with Wallet Balance & Add Balance Button */}
-      <header className={`bg-gradient-to-r ${theme.gradient} text-white sticky top-0 z-30 shadow-lg`}>
-        <div className="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
-          {/* Site Name & User Greeting */}
-          <div className="flex items-center gap-3">
-            <div className="bg-white/15 p-2 rounded-xl">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="font-bold text-base sm:text-lg leading-tight">{settings.siteName}</h1>
-              <p className="text-xs text-white/80">
-                Namaste, <span className="font-semibold text-white">{currentUser.name}</span> ({currentUser.mobile})
-              </p>
-            </div>
-          </div>
-
-          {/* Wallet Balance + Add Balance + Help + Logout */}
-          <div className="flex items-center gap-2 sm:gap-3 ml-auto">
-            {/* Wallet Pill */}
-            <div className="flex items-center gap-2 bg-black/25 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/15">
-              <Wallet className="w-4 h-4 text-amber-300" />
-              <div className="text-left">
-                <div className="text-[10px] uppercase tracking-wider text-white/75 leading-none">Balance</div>
-                <div className="text-sm sm:text-base font-extrabold text-amber-300 leading-tight">
-                  ₹{currentUser.balance}
-                </div>
-              </div>
-              <button
-                onClick={() => setShowAddMoney(true)}
-                className="ml-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow transition"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>Add Balance</span>
-              </button>
-            </div>
-
-            {/* Direct Help Chat Button */}
-            <button
-              onClick={() => setShowChat(true)}
-              className="relative bg-white/15 hover:bg-white/25 p-2.5 rounded-xl transition flex items-center gap-1.5 text-xs font-semibold"
-              title="Admin se seedha chat karein"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span className="hidden md:inline">Help Chat</span>
-            </button>
-
-            {/* Logout */}
-            <button
-              onClick={() => setCurrentUserId(null)}
-              className="bg-red-500/80 hover:bg-red-600 p-2.5 rounded-xl transition"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Container */}
-      <main className="max-w-6xl w-full mx-auto px-4 py-6 flex-1 space-y-6">
-        {/* Personal Notification Banner / Cards (Only visible to THIS user) */}
-        {myNotifications.length > 0 && (
-          <section className="bg-white rounded-2xl border-2 border-amber-300 shadow-sm overflow-hidden">
-            <div className="bg-amber-50 px-4 py-2.5 border-b border-amber-200 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
-                <Bell className="w-4 h-4 text-amber-600 animate-bounce" />
-                <span>Admin Notification ({myNotifications.length})</span>
-              </div>
-              <span className="text-[11px] text-amber-700 font-medium">Aapke liye vishesh sandesh</span>
-            </div>
-            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {myNotifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  className="flex flex-col sm:flex-row gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200"
-                >
-                  {notif.image && (
-                    <img
-                      src={notif.image}
-                      alt="Admin Notification"
-                      className="w-full sm:w-28 h-28 object-cover rounded-lg border border-slate-300 shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 flex flex-col justify-between">
-                    <p className="text-sm font-medium text-slate-800 whitespace-pre-line">
-                      {notif.caption}
-                    </p>
-                    <span className="text-[11px] text-slate-400 mt-2">{notif.createdAt}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Navigation Pills */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setActiveTab('apply')}
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition ${
-              activeTab === 'apply'
-                ? `${theme.primary} text-white shadow`
-                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>New Application Form</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition ${
-              activeTab === 'history'
-                ? `${theme.primary} text-white shadow`
-                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            <span>My Applications ({myApplications.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('wallet')}
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition ${
-              activeTab === 'wallet'
-                ? `${theme.primary} text-white shadow`
-                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            <IndianRupee className="w-4 h-4" />
-            <span>Wallet History ({myDeposits.length})</span>
-          </button>
-        </div>
-
-        {/* TAB 1: SERVICE APPLICATION FORM */}
-        {activeTab === 'apply' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-800">Online Application Form</h2>
-                  <p className="text-xs text-slate-500">
-                    Sahi details bharein. Submit karne par aapke wallet se service fees cut hogi.
-                  </p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${theme.badge}`}>
-                  Fees: ₹{services.find((s) => s.id === selectedServiceId)?.fee || 200}
-                </span>
-              </div>
-
-              <form onSubmit={handleServiceSubmit} className="space-y-4">
-                {/* Select Service */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Service Chunein (Select Service)
-                  </label>
-                  <select
-                    value={selectedServiceId}
-                    onChange={(e) => setSelectedServiceId(e.target.value)}
-                    className={`w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 ${theme.ring}`}
-                  >
-                    {services.map((srv) => (
-                      <option key={srv.id} value={srv.id}>
-                        {srv.name} — (Fees: ₹{srv.fee})
-                      </option>
-                    ))}
-                  </select>
-                  {services.find((s) => s.id === selectedServiceId)?.description && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      {services.find((s) => s.id === selectedServiceId)?.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Application Number */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Application Number <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <FileText className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Apna Application Number daalein"
-                      value={appNumber}
-                      onChange={(e) => setAppNumber(e.target.value)}
-                      className={`w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}`}
-                    />
-                  </div>
-                </div>
-
-                {/* Date of Birth (DOB) */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Date of Birth (DOB) <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                    <input
-                      type="date"
-                      required
-                      value={dob}
-                      onChange={(e) => setDob(e.target.value)}
-                      className={`w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}`}
-                    />
-                  </div>
-                </div>
-
-                {/* Exam Password / OTP */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Exam Password / OTP <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Exam Password ya OTP daalein"
-                      value={examPassOtp}
-                      onChange={(e) => setExamPassOtp(e.target.value)}
-                      className={`w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}`}
-                    />
-                  </div>
-                </div>
-
-                {/* Fee Summary Box */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between text-sm">
-                  <span className="text-slate-600 font-medium">Wallet se katne wali fees:</span>
-                  <span className="text-base font-extrabold text-slate-900">
-                    ₹{services.find((s) => s.id === selectedServiceId)?.fee || 200}
-                  </span>
-                </div>
-
-                <button
-                  type="submit"
-                  className={`w-full ${theme.primary} text-white font-bold py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2`}
-                >
-                  <span>Submit Application & Pay ₹{services.find((s) => s.id === selectedServiceId)?.fee || 200}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </form>
-            </div>
-
-            {/* Right Info / Quick Help Card */}
-            <div className="space-y-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                <h3 className="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
-                  <Wallet className={`w-4 h-4 ${theme.primaryText}`} />
-                  <span>Wallet Balance Jankari</span>
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed mb-3">
-                  Form submit karne ke liye aapke wallet me kam se kam <b>₹{settings.minDeposit}</b> hona zaroori hai. Upar <b>Add Balance</b> button par click karke QR code se payment karein.
-                </p>
-                <button
-                  onClick={() => setShowAddMoney(true)}
-                  className={`w-full py-2.5 rounded-xl text-xs font-bold border ${theme.primaryLight} transition`}
-                >
-                  + Add Balance (Min ₹{settings.minDeposit})
-                </button>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                <h3 className="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
-                  <MessageSquare className={`w-4 h-4 ${theme.primaryText}`} />
-                  <span>Koi Samasya Hai? (Help)</span>
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed mb-3">
-                  Kisi bhi madad ke liye seedha Admin se live chat karein. Aapka message turant Admin ke SMS inbox me jayega.
-                </p>
-                <button
-                  onClick={() => setShowChat(true)}
-                  className={`w-full ${theme.primary} text-white py-2.5 rounded-xl text-xs font-bold transition`}
-                >
-                  Admin se Chat Karein
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: SUBMITTED APPLICATIONS HISTORY */}
-        {activeTab === 'history' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800">Aapki Submitted Applications</h3>
-              <span className="text-xs text-slate-500">Total: {myApplications.length}</span>
-            </div>
-            {myApplications.length === 0 ? (
-              <div className="p-10 text-center text-slate-400 text-sm">
-                Abhi tak aapne koi application submit nahi ki hai.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
-                    <tr>
-                      <th className="px-4 py-3">Service</th>
-                      <th className="px-4 py-3">Application No.</th>
-                      <th className="px-4 py-3">DOB</th>
-                      <th className="px-4 py-3">Pass / OTP</th>
-                      <th className="px-4 py-3">Fees Paid</th>
-                      <th className="px-4 py-3">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {myApplications.map((app) => (
-                      <tr key={app.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-semibold text-slate-800">{app.serviceName}</td>
-                        <td className="px-4 py-3 font-mono text-xs">{app.appNumber}</td>
-                        <td className="px-4 py-3">{app.dob}</td>
-                        <td className="px-4 py-3 font-mono text-xs">{app.examPassOtp}</td>
-                        <td className="px-4 py-3 font-bold text-emerald-600">₹{app.feePaid}</td>
-                        <td className="px-4 py-3 text-xs text-slate-500">{app.createdAt}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 3: WALLET / DEPOSIT HISTORY */}
-        {activeTab === 'wallet' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800">Wallet Add Balance Requests</h3>
-              <button
-                onClick={() => setShowAddMoney(true)}
-                className={`${theme.primary} text-white text-xs font-bold px-3 py-1.5 rounded-lg`}
-              >
-                + Add Balance
-              </button>
-            </div>
-            {myDeposits.length === 0 ? (
-              <div className="p-10 text-center text-slate-400 text-sm">
-                Abhi tak koi balance add request nahi hai.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
-                    <tr>
-                      <th className="px-4 py-3">Amount</th>
-                      <th className="px-4 py-3">UTR / Ref ID</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {myDeposits.map((dep) => (
-                      <tr key={dep.id}>
-                        <td className="px-4 py-3 font-bold text-slate-900">₹{dep.amount}</td>
-                        <td className="px-4 py-3 font-mono text-xs">{dep.utr}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                              dep.status === 'approved'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : dep.status === 'rejected'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-amber-100 text-amber-700'
-                            }`}
-                          >
-                            {dep.status.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-500">{dep.createdAt}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
-
-      {/* ADD BALANCE MODAL (WITH ADMIN QR CODE & MIN ₹200) */}
-      {showAddMoney && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95">
-            <div className={`bg-gradient-to-r ${theme.gradient} text-white px-5 py-4 flex items-center justify-between`}>
-              <div className="flex items-center gap-2">
-                <QrCode className="w-5 h-5" />
-                <h3 className="font-bold text-base">Add Balance (Min ₹{settings.minDeposit})</h3>
-              </div>
-              <button onClick={() => setShowAddMoney(false)} className="p-1 hover:bg-white/20 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              {/* QR Code Display */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col items-center text-center">
-                <img
-                  src={settings.qrImage}
-                  alt="Payment QR Code"
-                  className="w-44 h-44 object-contain bg-white p-2 rounded-xl border border-slate-200 shadow-xs"
-                />
-                <p className="text-xs font-bold text-slate-700 mt-2">
-                  Scan QR & Pay (Minimum ₹{settings.minDeposit})
-                </p>
-                {settings.upiId && (
-                  <p className="text-[11px] text-slate-500 font-mono mt-0.5">UPI: {settings.upiId}</p>
-                )}
-              </div>
-
-              <form onSubmit={(e) => handleAddBalanceSubmit(e, false)} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Amount (Minimum ₹{settings.minDeposit})
-                  </label>
-                  <input
-                    type="number"
-                    min={settings.minDeposit}
-                    required
-                    value={addAmount}
-                    onChange={(e) => setAddAmount(e.target.value)}
-                    className={`w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 ${theme.ring}`}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    UTR / Transaction Reference Number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Payment ke baad 12-digit UTR daalein"
-                    value={utrNumber}
-                    onChange={(e) => setUtrNumber(e.target.value)}
-                    className={`w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}`}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 pt-1">
-                  <button
-                    type="submit"
-                    className={`w-full ${theme.primary} text-white font-bold py-2.5 rounded-xl text-sm shadow transition`}
-                  >
-                    Submit Payment Request
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleAddBalanceSubmit(e, true)}
-                    className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold py-2 rounded-xl text-xs transition"
-                  >
-                    ⚡ Instant Demo Add ₹{addAmount || settings.minDeposit} (For Testing)
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* HELP / ADMIN CHAT DRAWER */}
-      {showChat && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex justify-end">
-          <div className="bg-white w-full max-w-md h-full flex flex-col shadow-2xl">
-            <div className={`bg-gradient-to-r ${theme.gradient} text-white px-4 py-3.5 flex items-center justify-between`}>
-              <div className="flex items-center gap-2.5">
-                <MessageSquare className="w-5 h-5" />
-                <div>
-                  <h3 className="font-bold text-sm">Admin Help & Support Chat</h3>
-                  <p className="text-[11px] text-white/80">Seedha Admin ko SMS / Message bhejein</p>
-                </div>
-              </div>
-              <button onClick={() => setShowChat(false)} className="p-1.5 hover:bg-white/20 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50">
-              {myMessages.length === 0 ? (
-                <div className="text-center text-slate-400 text-xs mt-10">
-                  Apna sawal likhein. Admin ko turant notification milega.
-                </div>
-              ) : (
-                myMessages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`flex flex-col max-w-[80%] ${
-                      m.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'
-                    }`}
-                  >
-                    <div
-                      className={`px-3.5 py-2 rounded-2xl text-sm shadow-xs ${
-                        m.sender === 'user'
-                          ? `${theme.primary} text-white rounded-br-none`
-                          : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'
-                      }`}
-                    >
-                      {m.text}
-                    </div>
-                    <span className="text-[10px] text-slate-400 mt-1 px-1">
-                      {m.sender === 'admin' ? 'Admin • ' : ''}
-                      {m.timestamp}
-                    </span>
-                  </div>
-                ))
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            <form onSubmit={handleSendChat} className="p-3 bg-white border-t border-slate-200 flex gap-2">
-              <input
-                type="text"
-                placeholder="Apna message likhein..."
-                value={chatText}
-                onChange={(e) => setChatText(e.target.value)}
-                className="flex-1 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                className={`${theme.primary} text-white px-4 py-2 rounded-xl flex items-center justify-center`}
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================================================================
-// ADMIN PANEL (/admin)
-// ============================================================================
-function AdminPortal({
-  settings,
-  setSettings,
-  users,
-  setUsers,
-  services,
-  setServices,
-  applications,
-  setApplications,
-  deposits,
-  setDeposits,
-  notifications,
-  setNotifications,
-  messages,
-  setMessages,
-  isAdminLoggedIn,
-  setIsAdminLoggedIn,
-  theme,
-  showToast,
-  goToUserSite,
-}) {
-  const [adminPassInput, setAdminPassInput] = useState('');
-  const [adminTab, setAdminTab] = useState('users'); // 'users' | 'apps' | 'deposits' | 'chat' | 'settings'
-
-  // Balance Transfer Modal State
-  const [transferUser, setTransferUser] = useState(null);
-  const [transferAmt, setTransferAmt] = useState('');
-  const [transferType, setTransferType] = useState('add'); // 'add' | 'deduct'
-
-  // Send Notification (Photo + Caption) Modal State
-  const [notifUser, setNotifUser] = useState(null);
-  const [notifImage, setNotifImage] = useState('');
-  const [notifCaption, setNotifCaption] = useState('');
-
-  // Chat Reply State
-  const [selectedChatUserId, setSelectedChatUserId] = useState(null);
-  const [adminReplyText, setAdminReplyText] = useState('');
-
-  // New Service Form State
-  const [newSrvName, setNewSrvName] = useState('');
-  const [newSrvFee, setNewSrvFee] = useState('200');
-  const [newSrvDesc, setNewSrvDesc] = useState('');
-
-  // Admin Login Gate
-  if (!isAdminLoggedIn) {
-    const handleAdminAuth = (e) => {
+    function handleUserRegister(e) {
       e.preventDefault();
-      if (adminPassInput === settings.adminPass) {
-        setIsAdminLoggedIn(true);
+      const name = document.getElementById('reg-name').value.trim();
+      const mobile = document.getElementById('reg-mobile').value.trim();
+      const password = document.getElementById('reg-pass').value.trim();
+
+      if (!name || mobile.length < 10 || !password) {
+        showToast('Kripya sahi Name, 10-digit Mobile Number aur Password daalein.', 'error');
+        return;
+      }
+      if (state.users.some((u) => u.mobile === mobile)) {
+        showToast('Ye Mobile Number pehle se registered hai! Login karein.', 'error');
+        return;
+      }
+
+      const newUser = {
+        id: 'usr_' + Date.now(),
+        name,
+        mobile,
+        password,
+        balance: 0,
+        createdAt: new Date().toLocaleString(),
+      };
+
+      state.users.unshift(newUser);
+      state.currentUserId = newUser.id;
+      syncAllStorage();
+      showToast(`Swagat hai ${newUser.name}! Account ban gaya hai.`);
+      render();
+    }
+
+    function handleUserLogin(e) {
+      e.preventDefault();
+      const mobile = document.getElementById('login-mobile').value.trim();
+      const password = document.getElementById('login-pass').value.trim();
+
+      const found = state.users.find((u) => u.mobile === mobile && u.password === password);
+      if (!found) {
+        showToast('Galat Mobile Number ya Password!', 'error');
+        return;
+      }
+
+      state.currentUserId = found.id;
+      syncAllStorage();
+      showToast(`Welcome back, ${found.name}!`);
+      render();
+    }
+
+    function handleUserLogout() {
+      state.currentUserId = null;
+      syncAllStorage();
+      render();
+    }
+
+    function setUserTab(tab) {
+      state.userTab = tab;
+      render();
+    }
+
+    function openAddMoneyModal() {
+      state.showAddMoneyModal = true;
+      render();
+    }
+
+    function closeAddMoneyModal() {
+      state.showAddMoneyModal = false;
+      render();
+    }
+
+    function submitAddBalance(e, instantApprove = false) {
+      if (e) e.preventDefault();
+      const user = state.users.find((u) => u.id === state.currentUserId);
+      if (!user) return;
+
+      const amtInput = document.getElementById('deposit-amount');
+      const utrInput = document.getElementById('deposit-utr');
+      const amt = Number(amtInput ? amtInput.value : 0);
+      const utr = utrInput ? utrInput.value.trim() : '';
+      const minAmt = Number(state.settings.minDeposit) || 200;
+
+      if (isNaN(amt) || amt < minAmt) {
+        showToast(`Minimum ₹${minAmt} add karna zaroori hai!`, 'error');
+        return;
+      }
+      if (!instantApprove && !utr) {
+        showToast('Payment karne ke baad UTR / Transaction ID daalein.', 'error');
+        return;
+      }
+
+      const req = {
+        id: 'dep_' + Date.now(),
+        userId: user.id,
+        userName: user.name,
+        userMobile: user.mobile,
+        amount: amt,
+        utr: instantApprove ? 'TEST-INSTANT-' + Math.floor(100000 + Math.random() * 900000) : utr,
+        status: instantApprove ? 'approved' : 'pending',
+        createdAt: new Date().toLocaleString(),
+      };
+
+      state.deposits.unshift(req);
+
+      if (instantApprove) {
+        user.balance += amt;
+        showToast(`₹${amt} aapke wallet me add ho gaya hai!`);
+      } else {
+        showToast(`₹${amt} ki request Admin ko bhej di gayi hai. Approval ke baad balance jud jayega.`);
+      }
+
+      state.showAddMoneyModal = false;
+      syncAllStorage();
+      render();
+    }
+
+    function handleServiceFormSubmit(e) {
+      e.preventDefault();
+      const user = state.users.find((u) => u.id === state.currentUserId);
+      if (!user) return;
+
+      const srvId = document.getElementById('srv-select').value;
+      const appNumber = document.getElementById('srv-app-num').value.trim();
+      const dob = document.getElementById('srv-dob').value.trim();
+      const examPassOtp = document.getElementById('srv-pass-otp').value.trim();
+
+      const service = state.services.find((s) => s.id === srvId) || state.services[0];
+      if (!service) return;
+
+      if (!appNumber || !dob || !examPassOtp) {
+        showToast('Application Number, DOB aur Exam Password / OTP sabhi bharein.', 'error');
+        return;
+      }
+
+      const fee = Number(service.fee) || 200;
+      if (user.balance < fee) {
+        showToast(`Insufficient Balance! Fees ₹${fee} hai. Pehle Add Balance se paise jodein.`, 'error');
+        state.showAddMoneyModal = true;
+        render();
+        return;
+      }
+
+      // Deduct Fee
+      user.balance -= fee;
+
+      // Save Application
+      state.applications.unshift({
+        id: 'app_' + Date.now(),
+        userId: user.id,
+        userName: user.name,
+        userMobile: user.mobile,
+        serviceName: service.name,
+        feePaid: fee,
+        appNumber,
+        dob,
+        examPassOtp,
+        status: 'Submitted',
+        createdAt: new Date().toLocaleString(),
+      });
+
+      syncAllStorage();
+      showToast(`Application Submit ho gayi! Wallet se ₹${fee} cut hue hain.`);
+      state.userTab = 'history';
+      render();
+    }
+
+    function updateSelectedServiceFeeBadge() {
+      const sel = document.getElementById('srv-select');
+      const badge = document.getElementById('srv-fee-badge');
+      const summaryFee = document.getElementById('srv-summary-fee');
+      const btnFee = document.getElementById('srv-btn-fee');
+      const descEl = document.getElementById('srv-desc-text');
+      if (!sel) return;
+      const srv = state.services.find((s) => s.id === sel.value);
+      if (srv) {
+        if (badge) badge.textContent = `Fees: ₹${srv.fee}`;
+        if (summaryFee) summaryFee.textContent = `₹${srv.fee}`;
+        if (btnFee) btnFee.textContent = `₹${srv.fee}`;
+        if (descEl) descEl.textContent = srv.description || '';
+      }
+    }
+
+    function toggleUserChatDrawer(open) {
+      state.showUserChatDrawer = open;
+      render();
+      if (open) {
+        setTimeout(() => {
+          const box = document.getElementById('user-chat-messages');
+          if (box) box.scrollTop = box.scrollHeight;
+        }, 50);
+      }
+    }
+
+    function handleUserSendMessage(e) {
+      e.preventDefault();
+      const user = state.users.find((u) => u.id === state.currentUserId);
+      const input = document.getElementById('user-chat-input');
+      if (!user || !input || !input.value.trim()) return;
+
+      state.messages.push({
+        id: 'msg_' + Date.now(),
+        userId: user.id,
+        userName: user.name,
+        userMobile: user.mobile,
+        sender: 'user',
+        text: input.value.trim(),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        readByAdmin: false,
+      });
+
+      syncAllStorage();
+      render();
+      setTimeout(() => {
+        const box = document.getElementById('user-chat-messages');
+        if (box) box.scrollTop = box.scrollHeight;
+      }, 50);
+    }
+
+    // =========================================================================
+    // 6. ADMIN PANEL ACTIONS
+    // =========================================================================
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const pass = document.getElementById('admin-pass-input').value;
+      if (pass === state.settings.adminPass) {
+        state.isAdminLoggedIn = true;
+        syncAllStorage();
         showToast('Admin Panel Login Successful!');
+        render();
       } else {
         showToast('Galat Admin Password!', 'error');
       }
-    };
-
-    return (
-      <div className="min-h-[calc(100vh-50px)] bg-slate-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-slate-900 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <ShieldCheck className="w-7 h-7" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900">Admin Panel Login</h2>
-            <p className="text-xs text-slate-500 mt-1">Route: /admin • Restricted Control Center</p>
-          </div>
-
-          <form onSubmit={handleAdminAuth} className="space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Admin Password</label>
-              <input
-                type="password"
-                required
-                placeholder="Enter admin password"
-                value={adminPassInput}
-                onChange={(e) => setAdminPassInput(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800"
-              />
-              <p className="text-[11px] text-slate-400 mt-1">Default Password: <b>admin123</b></p>
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-sm transition"
-            >
-              Open Admin Dashboard
-            </button>
-          </form>
-
-          <button
-            onClick={goToUserSite}
-            className="w-full text-xs text-slate-500 hover:text-slate-800 underline pt-1"
-          >
-            ← Wapas User Website par jayein
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Image File -> Base64 Converter
-  const handleFileUpload = (file, callback) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      callback(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Transfer Balance Execution
-  const handleTransferBalance = (e) => {
-    e.preventDefault();
-    const amt = Number(transferAmt);
-    if (!transferUser || isNaN(amt) || amt <= 0) {
-      showToast('Sahi amount daalein.', 'error');
-      return;
     }
 
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id !== transferUser.id) return u;
-        const updated = transferType === 'add' ? u.balance + amt : Math.max(0, u.balance - amt);
-        return { ...u, balance: updated };
-      })
-    );
-
-    showToast(
-      `${transferUser.name} ke wallet me ₹${amt} ${
-        transferType === 'add' ? 'transfer (add)' : 'deduct'
-      } ho gaya!`
-    );
-    setTransferUser(null);
-    setTransferAmt('');
-  };
-
-  // Send Targeted Notification (Photo + Caption) to Specific User
-  const handleSendUserNotification = (e) => {
-    e.preventDefault();
-    if (!notifUser || (!notifImage && !notifCaption.trim())) {
-      showToast('Photo upload karein ya Caption likhein.', 'error');
-      return;
+    function handleAdminLogout() {
+      state.isAdminLoggedIn = false;
+      syncAllStorage();
+      render();
     }
 
-    const newNotif = {
-      id: 'ntf_' + Date.now(),
-      userId: notifUser.id,
-      userName: notifUser.name,
-      image: notifImage,
-      caption: notifCaption.trim(),
-      createdAt: new Date().toLocaleString(),
-    };
-
-    setNotifications((prev) => [newNotif, ...prev]);
-    showToast(`Notification sirf ${notifUser.name} ko bhej diya gaya hai!`);
-    setNotifUser(null);
-    setNotifImage('');
-    setNotifCaption('');
-  };
-
-  // Approve / Reject User Deposit Request
-  const handleDepositAction = (dep, action) => {
-    setDeposits((prev) =>
-      prev.map((d) => (d.id === dep.id ? { ...d, status: action } : d))
-    );
-    if (action === 'approved') {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === dep.userId ? { ...u, balance: u.balance + dep.amount } : u))
-      );
-      showToast(`₹${dep.amount} approve karke ${dep.userName} ke wallet me add kar diya gaya.`);
-    } else {
-      showToast('Deposit request reject kar di gayi.', 'error');
+    function setAdminTab(tab) {
+      state.adminTab = tab;
+      render();
     }
-  };
 
-  // Add New Service
-  const handleAddService = (e) => {
-    e.preventDefault();
-    if (!newSrvName.trim()) return;
-    const srv = {
-      id: 'srv_' + Date.now(),
-      name: newSrvName.trim(),
-      fee: Number(newSrvFee) || 200,
-      description: newSrvDesc.trim(),
-    };
-    setServices((prev) => [...prev, srv]);
-    setNewSrvName('');
-    setNewSrvFee('200');
-    setNewSrvDesc('');
-    showToast('Nayi service user portal me add ho gayi!');
-  };
+    function openTransferModal(userId) {
+      state.transferModalUserId = userId;
+      render();
+    }
 
-  // Chat Users List & Unread Count
-  const unreadMessagesCount = messages.filter((m) => m.sender === 'user' && !m.readByAdmin).length;
-  const chatUserIds = Array.from(new Set(messages.map((m) => m.userId)));
+    function closeTransferModal() {
+      state.transferModalUserId = null;
+      render();
+    }
 
-  const handleOpenUserChat = (uid) => {
-    setSelectedChatUserId(uid);
-    setMessages((prev) =>
-      prev.map((m) => (m.userId === uid && m.sender === 'user' ? { ...m, readByAdmin: true } : m))
-    );
-  };
+    function executeBalanceTransfer(e) {
+      e.preventDefault();
+      const user = state.users.find((u) => u.id === state.transferModalUserId);
+      const type = document.getElementById('transfer-type').value;
+      const amt = Number(document.getElementById('transfer-amt').value);
 
-  const handleAdminReply = (e) => {
-    e.preventDefault();
-    if (!selectedChatUserId || !adminReplyText.trim()) return;
-    const targetUser = users.find((u) => u.id === selectedChatUserId);
+      if (!user || isNaN(amt) || amt <= 0) {
+        showToast('Sahi amount daalein.', 'error');
+        return;
+      }
 
-    const reply = {
-      id: 'msg_' + Date.now(),
-      userId: selectedChatUserId,
-      userName: targetUser?.name || 'User',
-      userMobile: targetUser?.mobile || '',
-      sender: 'admin',
-      text: adminReplyText.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      readByAdmin: true,
-    };
+      if (type === 'add') {
+        user.balance += amt;
+        showToast(`${user.name} ke wallet me ₹${amt} add ho gaya!`);
+      } else {
+        user.balance = Math.max(0, user.balance - amt);
+        showToast(`${user.name} ke wallet se ₹${amt} deduct ho gaya!`);
+      }
 
-    setMessages((prev) => [...prev, reply]);
-    setAdminReplyText('');
-  };
+      state.transferModalUserId = null;
+      syncAllStorage();
+      render();
+    }
 
-  return (
-    <div className="min-h-[calc(100vh-50px)] flex flex-col bg-slate-100">
-      {/* Admin Top Navbar */}
-      <header className="bg-slate-900 text-white px-4 py-3.5 shadow-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="bg-amber-400 text-slate-950 p-2 rounded-xl font-bold">
-              <ShieldCheck className="w-5 h-5" />
+    function openNotifModal(userId) {
+      state.notifModalUserId = userId;
+      state.tempNotifImageBase64 = '';
+      render();
+    }
+
+    function closeNotifModal() {
+      state.notifModalUserId = null;
+      state.tempNotifImageBase64 = '';
+      render();
+    }
+
+    function handleNotifPhotoSelect(input) {
+      if (input.files && input.files[0]) {
+        fileToBase64(input.files[0], (b64) => {
+          state.tempNotifImageBase64 = b64;
+          const preview = document.getElementById('notif-img-preview');
+          if (preview) {
+            preview.src = b64;
+            preview.classList.remove('hidden');
+          }
+        });
+      }
+    }
+
+    function executeSendTargetedNotif(e) {
+      e.preventDefault();
+      const user = state.users.find((u) => u.id === state.notifModalUserId);
+      const caption = document.getElementById('notif-caption-input').value.trim();
+      const img = state.tempNotifImageBase64;
+
+      if (!user || (!img && !caption)) {
+        showToast('Photo upload karein ya Caption likhein.', 'error');
+        return;
+      }
+
+      state.notifications.unshift({
+        id: 'ntf_' + Date.now(),
+        userId: user.id,
+        userName: user.name,
+        image: img,
+        caption,
+        createdAt: new Date().toLocaleString(),
+      });
+
+      state.notifModalUserId = null;
+      state.tempNotifImageBase64 = '';
+      syncAllStorage();
+      showToast(`Notification sirf ${user.name} ko bhej diya gaya hai!`);
+      render();
+    }
+
+    function openViewUserAppsModal(userId) {
+      state.viewUserAppsId = userId;
+      render();
+    }
+
+    function closeViewUserAppsModal() {
+      state.viewUserAppsId = null;
+      render();
+    }
+
+    function handleDepositApproval(depId, status) {
+      const dep = state.deposits.find((d) => d.id === depId);
+      if (!dep) return;
+      dep.status = status;
+
+      if (status === 'approved') {
+        const user = state.users.find((u) => u.id === dep.userId);
+        if (user) user.balance += dep.amount;
+        showToast(`₹${dep.amount} approve karke ${dep.userName} ke wallet me add kar diya gaya.`);
+      } else {
+        showToast('Deposit request reject kar di gayi.', 'error');
+      }
+
+      syncAllStorage();
+      render();
+    }
+
+    function selectAdminChatThread(userId) {
+      state.selectedChatUserId = userId;
+      state.messages.forEach((m) => {
+        if (m.userId === userId && m.sender === 'user') m.readByAdmin = true;
+      });
+      syncAllStorage();
+      render();
+      setTimeout(() => {
+        const box = document.getElementById('admin-chat-messages');
+        if (box) box.scrollTop = box.scrollHeight;
+      }, 50);
+    }
+
+    function handleAdminSendReply(e) {
+      e.preventDefault();
+      const input = document.getElementById('admin-reply-input');
+      const uid = state.selectedChatUserId;
+      if (!uid || !input || !input.value.trim()) return;
+
+      const targetUser = state.users.find((u) => u.id === uid);
+      state.messages.push({
+        id: 'msg_' + Date.now(),
+        userId: uid,
+        userName: targetUser ? targetUser.name : 'User',
+        userMobile: targetUser ? targetUser.mobile : '',
+        sender: 'admin',
+        text: input.value.trim(),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        readByAdmin: true,
+      });
+
+      syncAllStorage();
+      render();
+      setTimeout(() => {
+        const box = document.getElementById('admin-chat-messages');
+        if (box) box.scrollTop = box.scrollHeight;
+      }, 50);
+    }
+
+    function handleQrUpload(input) {
+      if (input.files && input.files[0]) {
+        fileToBase64(input.files[0], (b64) => {
+          state.settings.qrImage = b64;
+          syncAllStorage();
+          showToast('Naya Payment QR Code update ho gaya!');
+          render();
+        });
+      }
+    }
+
+    function handleSaveSiteSettings(e) {
+      e.preventDefault();
+      state.settings.siteName = document.getElementById('set-site-name').value.trim() || 'Digital Seva Portal';
+      state.settings.tagline = document.getElementById('set-tagline').value.trim();
+      state.settings.upiId = document.getElementById('set-upi').value.trim();
+      state.settings.minDeposit = Number(document.getElementById('set-min-dep').value) || 200;
+      state.settings.adminPass = document.getElementById('set-admin-pass').value.trim() || 'admin123';
+      syncAllStorage();
+      showToast('Website Settings update ho gayi hain!');
+      render();
+    }
+
+    function changeSiteTheme(themeKey) {
+      state.settings.theme = themeKey;
+      syncAllStorage();
+      showToast(`Theme updated to ${THEMES[themeKey].name}`);
+      render();
+    }
+
+    function handleAddNewService(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-srv-name').value.trim();
+      const fee = Number(document.getElementById('new-srv-fee').value) || 200;
+      const desc = document.getElementById('new-srv-desc').value.trim();
+
+      if (!name) return;
+      state.services.push({
+        id: 'srv_' + Date.now(),
+        name,
+        fee,
+        description: desc,
+      });
+
+      syncAllStorage();
+      showToast('Nayi service add ho gayi!');
+      render();
+    }
+
+    function deleteService(srvId) {
+      if (state.services.length <= 1) {
+        showToast('Kam se kam 1 service hona zaroori hai.', 'error');
+        return;
+      }
+      state.services = state.services.filter((s) => s.id !== srvId);
+      syncAllStorage();
+      showToast('Service delete kar di gayi.');
+      render();
+    }
+
+    // =========================================================================
+    // 7. RENDER VIEWS
+    // =========================================================================
+    function render() {
+      const app = document.getElementById('app');
+      const modalsRoot = document.getElementById('modals-root');
+      const theme = THEMES[state.settings.theme] || THEMES.indigo;
+      const adminMode = isAdminRoute();
+
+      // Update Page Title & Footer Route Indicator
+      document.title = adminMode ? `Admin Panel - ${state.settings.siteName}` : state.settings.siteName;
+      document.getElementById('footer-copy').textContent = `© ${new Date().getFullYear()} ${state.settings.siteName}. All rights reserved.`;
+      document.getElementById('route-indicator').textContent = adminMode ? '/admin' : '/';
+      document.getElementById('route-switch-btn').textContent = adminMode ? '← User Website par jayein' : 'Admin Panel (/admin) →';
+
+      modalsRoot.innerHTML = '';
+
+      if (adminMode) {
+        app.innerHTML = renderAdminView(theme);
+        modalsRoot.innerHTML = renderAdminModals();
+      } else {
+        app.innerHTML = renderUserView(theme);
+        modalsRoot.innerHTML = renderUserModals(theme);
+      }
+
+      lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------------------
+    // USER VIEW RENDERER
+    // -------------------------------------------------------------------------
+    function renderUserView(theme) {
+      const currentUser = state.users.find((u) => u.id === state.currentUserId);
+
+      // NOT LOGGED IN: LOGIN / REGISTER SCREEN
+      if (!currentUser) {
+        const isLogin = state.authTab === 'login';
+        return `
+          <header class="bg-gradient-to-r ${theme.gradient} text-white py-6 px-4 shadow-md">
+            <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="bg-white/15 p-2.5 rounded-2xl backdrop-blur-xs">
+                  <i data-lucide="shield-check" class="w-7 h-7"></i>
+                </div>
+                <div>
+                  <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">${esc(state.settings.siteName)}</h1>
+                  <p class="text-xs sm:text-sm text-white/80">${esc(state.settings.tagline)}</p>
+                </div>
+              </div>
+              <span class="text-xs bg-white/15 px-3.5 py-1.5 rounded-full font-semibold">24×7 Online Seva Portal</span>
             </div>
-            <div>
-              <h1 className="font-bold text-base sm:text-lg leading-tight">
-                Admin Control Panel <span className="text-xs font-normal text-amber-400">(/admin)</span>
-              </h1>
-              <p className="text-[11px] text-slate-400">{settings.siteName}</p>
+          </header>
+
+          <main class="flex-1 flex items-center justify-center p-4">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+              <div class="grid grid-cols-2 border-b border-slate-200 bg-slate-50">
+                <button onclick="switchAuthTab('login')" class="py-3.5 text-sm font-bold transition cursor-pointer ${isLogin ? `bg-white ${theme.text} border-b-2 border-current` : 'text-slate-500 hover:text-slate-800'}">
+                  User Login
+                </button>
+                <button onclick="switchAuthTab('register')" class="py-3.5 text-sm font-bold transition cursor-pointer ${!isLogin ? `bg-white ${theme.text} border-b-2 border-current` : 'text-slate-500 hover:text-slate-800'}">
+                  New Register
+                </button>
+              </div>
+
+              ${isLogin ? `
+                <form onsubmit="handleUserLogin(event)" class="p-6 space-y-4">
+                  <div class="text-center mb-2">
+                    <h2 class="text-lg font-extrabold text-slate-800">Apne Account me Login Karein</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Mobile Number aur Password daalein</p>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Mobile Number</label>
+                    <div class="relative">
+                      <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                      <input id="login-mobile" type="tel" maxlength="10" required placeholder="10-digit mobile number"
+                        oninput="this.value = this.value.replace(/\\D/g, '')"
+                        class="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                    <div class="relative">
+                      <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                      <input id="login-pass" type="password" required placeholder="Apna password daalein"
+                        class="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                    </div>
+                  </div>
+                  <button type="submit" class="w-full ${theme.btn} font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Login Karein</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                  </button>
+                </form>
+              ` : `
+                <form onsubmit="handleUserRegister(event)" class="p-6 space-y-4">
+                  <div class="text-center mb-2">
+                    <h2 class="text-lg font-extrabold text-slate-800">Naya Account Banayein</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Full Name, Mobile Number aur Password daalein</p>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Full Name (Poora Naam)</label>
+                    <div class="relative">
+                      <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                      <input id="reg-name" type="text" required placeholder="Apna naam likhein"
+                        class="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Mobile Number</label>
+                    <div class="relative">
+                      <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                      <input id="reg-mobile" type="tel" maxlength="10" required placeholder="10-digit mobile number"
+                        oninput="this.value = this.value.replace(/\\D/g, '')"
+                        class="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                    <div class="relative">
+                      <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                      <input id="reg-pass" type="password" required placeholder="Password banayein"
+                        class="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                    </div>
+                  </div>
+                  <button type="submit" class="w-full ${theme.btn} font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Register & Login</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                  </button>
+                </form>
+              `}
             </div>
-          </div>
+          </main>
+        `;
+      }
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={goToUserSite}
-              className="bg-white/10 hover:bg-white/20 text-xs font-semibold px-3 py-2 rounded-xl transition"
-            >
-              View User Site
-            </button>
-            <button
-              onClick={() => setIsAdminLoggedIn(false)}
-              className="bg-red-600 hover:bg-red-700 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      // LOGGED IN USER DASHBOARD
+      const myApps = state.applications.filter((a) => a.userId === currentUser.id);
+      const myNotifs = state.notifications.filter((n) => n.userId === currentUser.id);
+      const myDeposits = state.deposits.filter((d) => d.userId === currentUser.id);
+      const defaultSrv = state.services[0] || { fee: 200 };
 
-      {/* Admin Stats Summary Cards */}
-      <div className="max-w-7xl w-full mx-auto px-4 pt-5">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-            <div className="text-xs text-slate-500 font-medium">Total Users</div>
-            <div className="text-2xl font-extrabold text-slate-900 mt-1">{users.length}</div>
-          </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-            <div className="text-xs text-slate-500 font-medium">Applications Received</div>
-            <div className="text-2xl font-extrabold text-blue-600 mt-1">{applications.length}</div>
-          </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-            <div className="text-xs text-slate-500 font-medium">Pending Deposits</div>
-            <div className="text-2xl font-extrabold text-amber-600 mt-1">
-              {deposits.filter((d) => d.status === 'pending').length}
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-            <div className="text-xs text-slate-500 font-medium">New Help SMS</div>
-            <div className="text-2xl font-extrabold text-rose-600 mt-1">{unreadMessagesCount}</div>
-          </div>
-        </div>
-
-        {/* Admin Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mt-5 border-b border-slate-200 pb-3">
-          <button
-            onClick={() => setAdminTab('users')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition ${
-              adminTab === 'users' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Users, Balance & Notification ({users.length})</span>
-          </button>
-
-          <button
-            onClick={() => setAdminTab('apps')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition ${
-              adminTab === 'apps' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>Submitted Forms ({applications.length})</span>
-          </button>
-
-          <button
-            onClick={() => setAdminTab('deposits')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition ${
-              adminTab === 'deposits' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'
-            }`}
-          >
-            <IndianRupee className="w-4 h-4" />
-            <span>Deposit Requests ({deposits.filter((d) => d.status === 'pending').length})</span>
-          </button>
-
-          <button
-            onClick={() => setAdminTab('chat')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition relative ${
-              adminTab === 'chat' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Help SMS Inbox</span>
-            {unreadMessagesCount > 0 && (
-              <span className="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full animate-pulse">
-                {unreadMessagesCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setAdminTab('settings')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition ${
-              adminTab === 'settings' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span>QR Code, Theme & Services</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Admin Tab Content */}
-      <main className="max-w-7xl w-full mx-auto px-4 py-5 flex-1">
-        {/* TAB 1: USERS LIST (Name, Number, Password, Balance, Transfer, Photo+Caption Notification) */}
-        {adminTab === 'users' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+      return `
+        <!-- Top Sticky Wallet Header -->
+        <header class="bg-gradient-to-r ${theme.gradient} text-white sticky top-0 z-30 shadow-lg">
+          <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="bg-white/15 p-2 rounded-xl">
+                <i data-lucide="shield-check" class="w-6 h-6"></i>
+              </div>
               <div>
-                <h2 className="font-bold text-slate-800">Registered Users Management</h2>
-                <p className="text-xs text-slate-500">
-                  Yahan se har user ka Name, Number, Password, Balance dekhein, Balance transfer karein aur kisi bhi ek user ko Photo + Caption notification bhejein.
-                </p>
+                <h1 class="font-extrabold text-base sm:text-lg leading-tight">${esc(state.settings.siteName)}</h1>
+                <p class="text-xs text-white/80">Namaste, <span class="font-bold text-white">${esc(currentUser.name)}</span> (${esc(currentUser.mobile)})</p>
               </div>
             </div>
 
-            {users.length === 0 ? (
-              <div className="p-10 text-center text-slate-400 text-sm">
-                Abhi tak koi user register nahi hua hai.
+            <div class="flex items-center gap-2 sm:gap-3 ml-auto">
+              <!-- Wallet Pill -->
+              <div class="flex items-center gap-2.5 bg-black/25 backdrop-blur-xs px-3.5 py-1.5 rounded-2xl border border-white/15">
+                <i data-lucide="wallet" class="w-4 h-4 text-amber-300"></i>
+                <div>
+                  <div class="text-[10px] uppercase tracking-wider text-white/75 leading-none">Wallet Balance</div>
+                  <div class="text-sm sm:text-base font-extrabold text-amber-300 leading-tight">₹${currentUser.balance}</div>
+                </div>
+                <button onclick="openAddMoneyModal()" class="ml-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-xl flex items-center gap-1 shadow transition cursor-pointer">
+                  <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                  <span>Add Balance</span>
+                </button>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
-                    <tr>
-                      <th className="px-4 py-3">User Name</th>
-                      <th className="px-4 py-3">Mobile Number</th>
-                      <th className="px-4 py-3">Password</th>
-                      <th className="px-4 py-3">Wallet Balance</th>
-                      <th className="px-4 py-3">Applications</th>
-                      <th className="px-4 py-3 text-right">Admin Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {users.map((u) => {
-                      const userAppsCount = applications.filter((a) => a.userId === u.id).length;
-                      return (
-                        <tr key={u.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-bold text-slate-900">{u.name}</td>
-                          <td className="px-4 py-3 font-mono text-xs">{u.mobile}</td>
-                          <td className="px-4 py-3 font-mono text-xs text-rose-600 bg-rose-50/50">
-                            {u.password}
-                          </td>
-                          <td className="px-4 py-3 font-extrabold text-emerald-600">₹{u.balance}</td>
-                          <td className="px-4 py-3 text-xs font-semibold text-slate-600">
-                            {userAppsCount} Forms
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-end gap-2">
-                              {/* Transfer Balance Button */}
-                              <button
-                                onClick={() => {
-                                  setTransferUser(u);
-                                  setTransferType('add');
-                                  setTransferAmt('200');
-                                }}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-2xs"
-                              >
-                                <IndianRupee className="w-3.5 h-3.5" />
-                                <span>Transfer Balance</span>
-                              </button>
 
-                              {/* Photo + Caption Notification Button (Per User) */}
-                              <button
-                                onClick={() => {
-                                  setNotifUser(u);
-                                  setNotifImage('');
-                                  setNotifCaption('');
-                                }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-2xs"
-                              >
-                                <ImageIcon className="w-3.5 h-3.5" />
-                                <span>Send Photo Notice</span>
+              <!-- Help Chat Button -->
+              <button onclick="toggleUserChatDrawer(true)" class="bg-white/15 hover:bg-white/25 px-3 py-2.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold cursor-pointer" title="Admin se seedha chat karein">
+                <i data-lucide="message-square" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Help / Support</span>
+              </button>
+
+              <!-- Logout -->
+              <button onclick="handleUserLogout()" class="bg-red-500/85 hover:bg-red-600 p-2.5 rounded-xl transition cursor-pointer" title="Logout">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main class="max-w-6xl w-full mx-auto px-4 py-6 flex-1 space-y-6">
+
+          <!-- TARGETED USER NOTIFICATIONS (ONLY VISIBLE TO THIS USER) -->
+          ${myNotifs.length > 0 ? `
+            <section class="bg-white rounded-2xl border-2 border-amber-400 shadow-sm overflow-hidden">
+              <div class="bg-amber-50 px-4 py-2.5 border-b border-amber-200 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-amber-900 font-extrabold text-sm">
+                  <i data-lucide="bell" class="w-4 h-4 text-amber-600"></i>
+                  <span>My Updates / Admin Notifications (${myNotifs.length})</span>
+                </div>
+                <span class="text-[11px] font-semibold text-amber-700">Sirf aapke liye bheja gaya</span>
+              </div>
+              <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${myNotifs.map((n) => `
+                  <div class="flex flex-col sm:flex-row gap-3.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                    ${n.image ? `<img src="${n.image}" alt="Admin Update" class="w-full sm:w-32 h-32 object-cover rounded-xl border border-slate-300 shrink-0 bg-white" />` : ''}
+                    <div class="flex-1 flex flex-col justify-between">
+                      <p class="text-sm font-semibold text-slate-800 whitespace-pre-line">${esc(n.caption)}</p>
+                      <span class="text-[11px] text-slate-400 mt-2">${esc(n.createdAt)}</span>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </section>
+          ` : ''}
+
+          <!-- Dashboard Navigation Tabs -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="setUserTab('apply')" class="px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition cursor-pointer ${state.userTab === 'apply' ? `${theme.btn} shadow` : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'}">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>New Application Form</span>
+            </button>
+            <button onclick="setUserTab('history')" class="px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition cursor-pointer ${state.userTab === 'history' ? `${theme.btn} shadow` : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'}">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+              <span>My Applications (${myApps.length})</span>
+            </button>
+            <button onclick="setUserTab('wallet')" class="px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition cursor-pointer ${state.userTab === 'wallet' ? `${theme.btn} shadow` : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'}">
+              <i data-lucide="indian-rupee" class="w-4 h-4"></i>
+              <span>Wallet History (${myDeposits.length})</span>
+            </button>
+          </div>
+
+          <!-- TAB 1: SERVICE APPLICATION FORM -->
+          ${state.userTab === 'apply' ? `
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+                  <div>
+                    <h2 class="text-lg font-extrabold text-slate-800">Online Application Form</h2>
+                    <p class="text-xs text-slate-500">Details bharein. Submit karne par aapke wallet se service fees cut hogi.</p>
+                  </div>
+                  <span id="srv-fee-badge" class="px-3 py-1 rounded-full text-xs font-extrabold ${theme.badge}">Fees: ₹${defaultSrv.fee}</span>
+                </div>
+
+                <form onsubmit="handleServiceFormSubmit(event)" class="space-y-4">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Select Service</label>
+                    <select id="srv-select" onchange="updateSelectedServiceFeeBadge()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 ${theme.ring}">
+                      ${state.services.map((s) => `<option value="${esc(s.id)}">${esc(s.name)} — (₹${s.fee})</option>`).join('')}
+                    </select>
+                    <p id="srv-desc-text" class="text-xs text-slate-500 mt-1">${esc(defaultSrv.description || '')}</p>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Application Number <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                      <i data-lucide="file-text" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                      <input id="srv-app-num" type="text" required placeholder="Apna Application Number daalein"
+                        class="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Date of Birth (DOB) <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                      <i data-lucide="calendar" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                      <input id="srv-dob" type="date" required
+                        class="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Exam Password / OTP <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                      <i data-lucide="key-round" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                      <input id="srv-pass-otp" type="text" required placeholder="Exam Password ya OTP daalein"
+                        class="w-full pl-10 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                    </div>
+                  </div>
+
+                  <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between text-sm">
+                    <span class="text-slate-600 font-medium">Wallet se katne wali fees:</span>
+                    <span id="srv-summary-fee" class="text-base font-extrabold text-slate-900">₹${defaultSrv.fee}</span>
+                  </div>
+
+                  <button type="submit" class="w-full ${theme.btn} font-extrabold py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Submit Application & Pay <span id="srv-btn-fee">₹${defaultSrv.fee}</span></span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                  </button>
+                </form>
+              </div>
+
+              <!-- Side Help & Wallet Cards -->
+              <div class="space-y-4">
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                  <h3 class="font-extrabold text-slate-800 text-sm mb-2 flex items-center gap-2">
+                    <i data-lucide="wallet" class="w-4 h-4 ${theme.text}"></i>
+                    <span>Wallet Balance Jankari</span>
+                  </h3>
+                  <p class="text-xs text-slate-600 leading-relaxed mb-3">
+                    Form submit karne ke liye wallet me kam se kam <b>₹${state.settings.minDeposit}</b> hona zaroori hai. Upar <b>Add Balance</b> button par click karke QR code se payment karein.
+                  </p>
+                  <button onclick="openAddMoneyModal()" class="w-full py-2.5 rounded-xl text-xs font-extrabold border ${theme.light} transition cursor-pointer">
+                    + Add Balance (Min ₹${state.settings.minDeposit})
+                  </button>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                  <h3 class="font-extrabold text-slate-800 text-sm mb-2 flex items-center gap-2">
+                    <i data-lucide="message-square" class="w-4 h-4 ${theme.text}"></i>
+                    <span>Koi Samasya Hai? (Help)</span>
+                  </h3>
+                  <p class="text-xs text-slate-600 leading-relaxed mb-3">
+                    Kisi bhi madad ke liye seedha Admin se live chat karein. Aapka message turant Admin ke SMS inbox me jayega.
+                  </p>
+                  <button onclick="toggleUserChatDrawer(true)" class="w-full ${theme.btn} py-2.5 rounded-xl text-xs font-extrabold transition cursor-pointer">
+                    Admin se Chat Karein
+                  </button>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- TAB 2: SUBMITTED APPLICATIONS -->
+          ${state.userTab === 'history' ? `
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-extrabold text-slate-800">Aapki Submitted Applications</h3>
+                <span class="text-xs text-slate-500 font-semibold">Total: ${myApps.length}</span>
+              </div>
+              ${myApps.length === 0 ? `
+                <div class="p-10 text-center text-slate-400 text-sm">Abhi tak aapne koi application submit nahi ki hai.</div>
+              ` : `
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
+                      <tr>
+                        <th class="px-4 py-3">Service</th>
+                        <th class="px-4 py-3">Application No.</th>
+                        <th class="px-4 py-3">DOB</th>
+                        <th class="px-4 py-3">Pass / OTP</th>
+                        <th class="px-4 py-3">Fees Paid</th>
+                        <th class="px-4 py-3">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      ${myApps.map((a) => `
+                        <tr class="hover:bg-slate-50">
+                          <td class="px-4 py-3 font-bold text-slate-800">${esc(a.serviceName)}</td>
+                          <td class="px-4 py-3 font-mono text-xs">${esc(a.appNumber)}</td>
+                          <td class="px-4 py-3">${esc(a.dob)}</td>
+                          <td class="px-4 py-3 font-mono text-xs">${esc(a.examPassOtp)}</td>
+                          <td class="px-4 py-3 font-extrabold text-emerald-600">₹${a.feePaid}</td>
+                          <td class="px-4 py-3 text-xs text-slate-500">${esc(a.createdAt)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              `}
+            </div>
+          ` : ''}
+
+          <!-- TAB 3: WALLET HISTORY -->
+          ${state.userTab === 'wallet' ? `
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-extrabold text-slate-800">Wallet Add Balance Requests</h3>
+                <button onclick="openAddMoneyModal()" class="${theme.btn} text-xs font-extrabold px-3.5 py-2 rounded-xl cursor-pointer">+ Add Balance</button>
+              </div>
+              ${myDeposits.length === 0 ? `
+                <div class="p-10 text-center text-slate-400 text-sm">Abhi tak koi balance add request nahi hai.</div>
+              ` : `
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
+                      <tr>
+                        <th class="px-4 py-3">Amount</th>
+                        <th class="px-4 py-3">UTR / Ref ID</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      ${myDeposits.map((d) => `
+                        <tr>
+                          <td class="px-4 py-3 font-extrabold text-slate-900">₹${d.amount}</td>
+                          <td class="px-4 py-3 font-mono text-xs">${esc(d.utr)}</td>
+                          <td class="px-4 py-3">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${d.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : d.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">
+                              ${esc(d.status.toUpperCase())}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-xs text-slate-500">${esc(d.createdAt)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              `}
+            </div>
+          ` : ''}
+
+        </main>
+      `;
+    }
+
+    function renderUserModals(theme) {
+      const currentUser = state.users.find((u) => u.id === state.currentUserId);
+      if (!currentUser) return '';
+
+      let html = '';
+
+      // 1. ADD BALANCE MODAL (MIN ₹200 + ADMIN QR CODE)
+      if (state.showAddMoneyModal) {
+        html += `
+          <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+              <div class="bg-gradient-to-r ${theme.gradient} text-white px-5 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="qr-code" class="w-5 h-5"></i>
+                  <h3 class="font-extrabold text-base">Add Balance (Min ₹${state.settings.minDeposit})</h3>
+                </div>
+                <button onclick="closeAddMoneyModal()" class="p-1 hover:bg-white/20 rounded-lg cursor-pointer">
+                  <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+              </div>
+
+              <div class="p-5 space-y-4">
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col items-center text-center">
+                  <img src="${state.settings.qrImage}" alt="Payment QR" class="w-44 h-44 object-contain bg-white p-2 rounded-xl border border-slate-200 shadow-2xs" />
+                  <p class="text-xs font-extrabold text-slate-700 mt-2">Scan QR & Pay (Minimum ₹${state.settings.minDeposit})</p>
+                  ${state.settings.upiId ? `<p class="text-[11px] text-slate-500 font-mono mt-0.5">UPI ID: ${esc(state.settings.upiId)}</p>` : ''}
+                </div>
+
+                <form onsubmit="submitAddBalance(event, false)" class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Amount (Minimum ₹${state.settings.minDeposit})</label>
+                    <input id="deposit-amount" type="number" min="${state.settings.minDeposit}" value="${state.settings.minDeposit}" required
+                      class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm font-extrabold focus:outline-none focus:ring-2 ${theme.ring}" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">UTR / Transaction Reference ID</label>
+                    <input id="deposit-utr" type="text" placeholder="Payment ke baad 12-digit UTR daalein"
+                      class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                  </div>
+                  <div class="flex flex-col gap-2 pt-1">
+                    <button type="submit" class="w-full ${theme.btn} font-extrabold py-2.5 rounded-xl text-sm shadow transition cursor-pointer">
+                      Submit Payment Request
+                    </button>
+                    <button type="button" onclick="submitAddBalance(null, true)" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold py-2 rounded-xl text-xs transition cursor-pointer">
+                      ⚡ Instant Test Add Balance (Demo Mode)
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. USER HELP CHAT DRAWER
+      if (state.showUserChatDrawer) {
+        const myMsgs = state.messages.filter((m) => m.userId === currentUser.id);
+        html += `
+          <div class="fixed inset-0 z-50 bg-black/50 flex justify-end">
+            <div class="bg-white w-full max-w-md h-full flex flex-col shadow-2xl">
+              <div class="bg-gradient-to-r ${theme.gradient} text-white px-4 py-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <i data-lucide="message-square" class="w-5 h-5"></i>
+                  <div>
+                    <h3 class="font-extrabold text-sm">Admin Help & Support Chat</h3>
+                    <p class="text-[11px] text-white/80">Seedha Admin ko SMS / Message bhejein</p>
+                  </div>
+                </div>
+                <button onclick="toggleUserChatDrawer(false)" class="p-1.5 hover:bg-white/20 rounded-lg cursor-pointer">
+                  <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+              </div>
+
+              <div id="user-chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50">
+                ${myMsgs.length === 0 ? `
+                  <div class="text-center text-slate-400 text-xs mt-12">Apna sawal likhein. Admin ko turant SMS notification milega.</div>
+                ` : myMsgs.map((m) => `
+                  <div class="flex flex-col max-w-[80%] ${m.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}">
+                    <div class="px-3.5 py-2 rounded-2xl text-sm shadow-2xs ${m.sender === 'user' ? `${theme.btn} rounded-br-none` : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'}">
+                      ${esc(m.text)}
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-1 px-1">${m.sender === 'admin' ? 'Admin • ' : ''}${esc(m.timestamp)}</span>
+                  </div>
+                `).join('')}
+              </div>
+
+              <form onsubmit="handleUserSendMessage(event)" class="p-3 bg-white border-t border-slate-200 flex gap-2">
+                <input id="user-chat-input" type="text" placeholder="Apna message likhein..." required
+                  class="flex-1 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 ${theme.ring}" />
+                <button type="submit" class="${theme.btn} px-4 py-2 rounded-xl flex items-center justify-center cursor-pointer">
+                  <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        `;
+      }
+
+      return html;
+    }
+
+    // -------------------------------------------------------------------------
+    // ADMIN VIEW RENDERER (/admin)
+    // -------------------------------------------------------------------------
+    function renderAdminView(theme) {
+      // ADMIN LOGIN GATE
+      if (!state.isAdminLoggedIn) {
+        return `
+          <div class="min-h-[calc(100vh-55px)] bg-slate-900 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+              <div class="text-center">
+                <div class="w-12 h-12 bg-slate-900 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <i data-lucide="shield-check" class="w-7 h-7"></i>
+                </div>
+                <h2 class="text-xl font-extrabold text-slate-900">Admin Panel Login</h2>
+                <p class="text-xs text-slate-500 mt-1">Route: /admin • Control Center</p>
+              </div>
+              <form onsubmit="handleAdminLogin(event)" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Admin Password</label>
+                  <input id="admin-pass-input" type="password" required placeholder="Enter admin password"
+                    class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800" />
+                  <p class="text-[11px] text-slate-400 mt-1">Default Password: <b>admin123</b></p>
+                </div>
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2.5 rounded-xl text-sm transition cursor-pointer">
+                  Open Admin Dashboard
+                </button>
+              </form>
+              <button onclick="toggleAdminRoute()" class="w-full text-xs text-slate-500 hover:text-slate-900 underline pt-1 cursor-pointer">
+                ← Wapas User Website par jayein
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      const pendingDeposits = state.deposits.filter((d) => d.status === 'pending').length;
+      const unreadSms = state.messages.filter((m) => m.sender === 'user' && !m.readByAdmin).length;
+      const chatUserIds = Array.from(new Set(state.messages.map((m) => m.userId)));
+
+      return `
+        <!-- Admin Top Navbar -->
+        <header class="bg-slate-900 text-white px-4 py-3.5 shadow-md sticky top-0 z-30">
+          <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="bg-amber-400 text-slate-950 p-2 rounded-xl font-bold">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h1 class="font-extrabold text-base sm:text-lg leading-tight">
+                  Admin Control Panel <span class="text-xs font-semibold text-amber-400">(/admin)</span>
+                </h1>
+                <p class="text-[11px] text-slate-400">${esc(state.settings.siteName)}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="toggleAdminRoute()" class="bg-white/10 hover:bg-white/20 text-xs font-bold px-3.5 py-2 rounded-xl transition cursor-pointer">
+                View User Site
+              </button>
+              <button onclick="handleAdminLogout()" class="bg-red-600 hover:bg-red-700 text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Stats Cards & Navigation -->
+        <div class="max-w-7xl w-full mx-auto px-4 pt-5">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+              <div class="text-xs text-slate-500 font-semibold">Registered Users</div>
+              <div class="text-2xl font-extrabold text-slate-900 mt-1">${state.users.length}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+              <div class="text-xs text-slate-500 font-semibold">Applications Received</div>
+              <div class="text-2xl font-extrabold text-indigo-600 mt-1">${state.applications.length}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+              <div class="text-xs text-slate-500 font-semibold">Pending Deposits</div>
+              <div class="text-2xl font-extrabold text-amber-600 mt-1">${pendingDeposits}</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+              <div class="text-xs text-slate-500 font-semibold">New Help SMS</div>
+              <div class="text-2xl font-extrabold text-rose-600 mt-1">${unreadSms}</div>
+            </div>
+          </div>
+
+          <!-- Admin Tabs -->
+          <div class="flex flex-wrap gap-2 mt-5 border-b border-slate-200 pb-3">
+            <button onclick="setAdminTab('users')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition cursor-pointer ${state.adminTab === 'users' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'}">
+              <i data-lucide="users" class="w-4 h-4"></i>
+              <span>Users, Balance & Photo Notice (${state.users.length})</span>
+            </button>
+            <button onclick="setAdminTab('apps')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition cursor-pointer ${state.adminTab === 'apps' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'}">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>Submitted Applications (${state.applications.length})</span>
+            </button>
+            <button onclick="setAdminTab('deposits')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition cursor-pointer ${state.adminTab === 'deposits' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'}">
+              <i data-lucide="indian-rupee" class="w-4 h-4"></i>
+              <span>Deposit Requests (${pendingDeposits})</span>
+            </button>
+            <button onclick="setAdminTab('chat')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition cursor-pointer ${state.adminTab === 'chat' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'}">
+              <i data-lucide="message-square" class="w-4 h-4"></i>
+              <span>Help SMS Inbox</span>
+              ${unreadSms > 0 ? `<span class="bg-rose-600 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">NEW SMS (${unreadSms})</span>` : ''}
+            </button>
+            <button onclick="setAdminTab('settings')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition cursor-pointer ${state.adminTab === 'settings' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'}">
+              <i data-lucide="settings" class="w-4 h-4"></i>
+              <span>QR Code, Theme & Services</span>
+            </button>
+          </div>
+        </div>
+
+        <main class="max-w-7xl w-full mx-auto px-4 py-5 flex-1">
+
+          <!-- ADMIN TAB 1: USERS MANAGEMENT -->
+          ${state.adminTab === 'users' ? `
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-4 border-b border-slate-100">
+                <h2 class="font-extrabold text-slate-800">Registered Users Management</h2>
+                <p class="text-xs text-slate-500">Har user ka Name, Number, Password, Balance dekhein, Balance Transfer karein aur kisi bhi ek user ko Photo + Caption notification bhejein.</p>
+              </div>
+              ${state.users.length === 0 ? `
+                <div class="p-10 text-center text-slate-400 text-sm">Abhi tak koi user register nahi hua hai.</div>
+              ` : `
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
+                      <tr>
+                        <th class="px-4 py-3">User Name</th>
+                        <th class="px-4 py-3">Mobile Number</th>
+                        <th class="px-4 py-3">Password</th>
+                        <th class="px-4 py-3">Wallet Balance</th>
+                        <th class="px-4 py-3">Forms</th>
+                        <th class="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      ${state.users.map((u) => {
+                        const count = state.applications.filter((a) => a.userId === u.id).length;
+                        return `
+                          <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-extrabold text-slate-900">${esc(u.name)}</td>
+                            <td class="px-4 py-3 font-mono text-xs">${esc(u.mobile)}</td>
+                            <td class="px-4 py-3 font-mono text-xs text-rose-600 font-bold">${esc(u.password)}</td>
+                            <td class="px-4 py-3 font-extrabold text-emerald-600">₹${u.balance}</td>
+                            <td class="px-4 py-3">
+                              <button onclick="openViewUserAppsModal('${esc(u.id)}')" class="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                                ${count} Forms
                               </button>
-                            </div>
+                            </td>
+                            <td class="px-4 py-3">
+                              <div class="flex flex-wrap items-center justify-end gap-2">
+                                <button onclick="openTransferModal('${esc(u.id)}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 cursor-pointer">
+                                  <i data-lucide="indian-rupee" class="w-3.5 h-3.5"></i>
+                                  <span>Transfer Balance</span>
+                                </button>
+                                <button onclick="openNotifModal('${esc(u.id)}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 cursor-pointer">
+                                  <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                                  <span>Send Photo Notification</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              `}
+            </div>
+          ` : ''}
+
+          <!-- ADMIN TAB 2: ALL SUBMITTED APPLICATIONS -->
+          ${state.adminTab === 'apps' ? `
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-4 border-b border-slate-100">
+                <h2 class="font-extrabold text-slate-800">Users dwara dale gaye Applications</h2>
+              </div>
+              ${state.applications.length === 0 ? `
+                <div class="p-10 text-center text-slate-400 text-sm">Abhi tak koi application nahi aayi hai.</div>
+              ` : `
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
+                      <tr>
+                        <th class="px-4 py-3">User (Mobile)</th>
+                        <th class="px-4 py-3">Service</th>
+                        <th class="px-4 py-3">Application Number</th>
+                        <th class="px-4 py-3">Date of Birth (DOB)</th>
+                        <th class="px-4 py-3">Exam Password / OTP</th>
+                        <th class="px-4 py-3">Fees Cut</th>
+                        <th class="px-4 py-3">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      ${state.applications.map((a) => `
+                        <tr class="hover:bg-slate-50">
+                          <td class="px-4 py-3">
+                            <div class="font-extrabold text-slate-900">${esc(a.userName)}</div>
+                            <div class="text-xs text-slate-500">${esc(a.userMobile)}</div>
+                          </td>
+                          <td class="px-4 py-3 text-xs font-bold text-indigo-700">${esc(a.serviceName)}</td>
+                          <td class="px-4 py-3 font-mono font-extrabold text-slate-900">${esc(a.appNumber)}</td>
+                          <td class="px-4 py-3 font-semibold">${esc(a.dob)}</td>
+                          <td class="px-4 py-3 font-mono font-extrabold text-rose-600">${esc(a.examPassOtp)}</td>
+                          <td class="px-4 py-3 font-extrabold text-emerald-600">₹${a.feePaid}</td>
+                          <td class="px-4 py-3 text-xs text-slate-500">${esc(a.createdAt)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              `}
+            </div>
+          ` : ''}
+
+          <!-- ADMIN TAB 3: DEPOSIT REQUESTS -->
+          ${state.adminTab === 'deposits' ? `
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-4 border-b border-slate-100">
+                <h2 class="font-extrabold text-slate-800">QR Payment / Add Balance Requests</h2>
+              </div>
+              ${state.deposits.length === 0 ? `
+                <div class="p-10 text-center text-slate-400 text-sm">Koi deposit request nahi hai.</div>
+              ` : `
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
+                      <tr>
+                        <th class="px-4 py-3">User</th>
+                        <th class="px-4 py-3">Amount</th>
+                        <th class="px-4 py-3">UTR / Ref ID</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      ${state.deposits.map((d) => `
+                        <tr>
+                          <td class="px-4 py-3">
+                            <div class="font-extrabold">${esc(d.userName)}</div>
+                            <div class="text-xs text-slate-500">${esc(d.userMobile)}</div>
+                          </td>
+                          <td class="px-4 py-3 font-extrabold text-slate-900">₹${d.amount}</td>
+                          <td class="px-4 py-3 font-mono text-xs">${esc(d.utr)}</td>
+                          <td class="px-4 py-3">
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${d.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : d.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">
+                              ${esc(d.status.toUpperCase())}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-right">
+                            ${d.status === 'pending' ? `
+                              <div class="flex justify-end gap-2">
+                                <button onclick="handleDepositApproval('${esc(d.id)}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer">
+                                  Approve & Credit
+                                </button>
+                                <button onclick="handleDepositApproval('${esc(d.id)}', 'rejected')" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer">
+                                  Reject
+                                </button>
+                              </div>
+                            ` : `<span class="text-xs text-slate-400">Completed</span>`}
                           </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 2: SUBMITTED APPLICATIONS (Application Number, DOB, Exam Password/OTP) */}
-        {adminTab === 'apps' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100">
-              <h2 className="font-bold text-slate-800">Users dwara dale gaye Applications</h2>
-            </div>
-            {applications.length === 0 ? (
-              <div className="p-10 text-center text-slate-400 text-sm">
-                Abhi tak koi application nahi aayi hai.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
-                    <tr>
-                      <th className="px-4 py-3">User (Mobile)</th>
-                      <th className="px-4 py-3">Service</th>
-                      <th className="px-4 py-3">Application Number</th>
-                      <th className="px-4 py-3">Date of Birth (DOB)</th>
-                      <th className="px-4 py-3">Exam Password / OTP</th>
-                      <th className="px-4 py-3">Fees Cut</th>
-                      <th className="px-4 py-3">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {applications.map((app) => (
-                      <tr key={app.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3">
-                          <div className="font-bold text-slate-900">{app.userName}</div>
-                          <div className="text-xs text-slate-500">{app.userMobile}</div>
-                        </td>
-                        <td className="px-4 py-3 text-xs font-semibold text-blue-700">{app.serviceName}</td>
-                        <td className="px-4 py-3 font-mono font-bold text-slate-900">{app.appNumber}</td>
-                        <td className="px-4 py-3 font-medium">{app.dob}</td>
-                        <td className="px-4 py-3 font-mono font-bold text-rose-600">{app.examPassOtp}</td>
-                        <td className="px-4 py-3 font-bold text-emerald-600">₹{app.feePaid}</td>
-                        <td className="px-4 py-3 text-xs text-slate-500">{app.createdAt}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 3: DEPOSIT REQUESTS APPROVAL */}
-        {adminTab === 'deposits' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100">
-              <h2 className="font-bold text-slate-800">QR Payment / Add Balance Requests</h2>
-            </div>
-            {deposits.length === 0 ? (
-              <div className="p-10 text-center text-slate-400 text-sm">Koi deposit request nahi hai.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
-                    <tr>
-                      <th className="px-4 py-3">User</th>
-                      <th className="px-4 py-3">Amount</th>
-                      <th className="px-4 py-3">UTR / Ref</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {deposits.map((dep) => (
-                      <tr key={dep.id}>
-                        <td className="px-4 py-3">
-                          <div className="font-bold">{dep.userName}</div>
-                          <div className="text-xs text-slate-500">{dep.userMobile}</div>
-                        </td>
-                        <td className="px-4 py-3 font-extrabold text-slate-900">₹{dep.amount}</td>
-                        <td className="px-4 py-3 font-mono text-xs">{dep.utr}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                              dep.status === 'approved'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : dep.status === 'rejected'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-amber-100 text-amber-700'
-                            }`}
-                          >
-                            {dep.status.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {dep.status === 'pending' ? (
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => handleDepositAction(dep, 'approved')}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
-                              >
-                                Approve & Add
-                              </button>
-                              <button
-                                onClick={() => handleDepositAction(dep, 'rejected')}
-                                className="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold px-3 py-1.5 rounded-lg"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-slate-400">Completed</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 4: HELP SMS / LIVE CHAT INBOX */}
-        {adminTab === 'chat' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[450px]">
-            {/* Left Users List */}
-            <div className="border-r border-slate-200 bg-slate-50">
-              <div className="p-3.5 border-b border-slate-200 font-bold text-sm text-slate-800">
-                User Help Messages ({chatUserIds.length})
-              </div>
-              {chatUserIds.length === 0 ? (
-                <div className="p-6 text-xs text-slate-400 text-center">
-                  Abhi tak kisi user ne help message nahi bheja hai.
+                      `).join('')}
+                    </tbody>
+                  </table>
                 </div>
-              ) : (
-                <div className="divide-y divide-slate-200">
-                  {chatUserIds.map((uid) => {
-                    const uMsgs = messages.filter((m) => m.userId === uid);
-                    const lastMsg = uMsgs[uMsgs.length - 1];
-                    const hasUnread = uMsgs.some((m) => m.sender === 'user' && !m.readByAdmin);
-                    return (
-                      <button
-                        key={uid}
-                        onClick={() => handleOpenUserChat(uid)}
-                        className={`w-full text-left p-3.5 hover:bg-white transition flex items-center justify-between ${
-                          selectedChatUserId === uid ? 'bg-white border-l-4 border-slate-900' : ''
-                        }`}
-                      >
-                        <div>
-                          <div className="font-bold text-sm text-slate-900">{lastMsg?.userName}</div>
-                          <div className="text-xs text-slate-500 truncate max-w-[180px]">
-                            {lastMsg?.text}
+              `}
+            </div>
+          ` : ''}
+
+          <!-- ADMIN TAB 4: HELP SMS INBOX -->
+          ${state.adminTab === 'chat' ? `
+            <div class="grid grid-cols-1 md:grid-cols-3 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[460px]">
+              <div class="border-r border-slate-200 bg-slate-50">
+                <div class="p-3.5 border-b border-slate-200 font-extrabold text-sm text-slate-800">
+                  User Help Messages (${chatUserIds.length})
+                </div>
+                ${chatUserIds.length === 0 ? `
+                  <div class="p-6 text-xs text-slate-400 text-center">Abhi tak kisi user ne help message nahi bheja hai.</div>
+                ` : `
+                  <div class="divide-y divide-slate-200">
+                    ${chatUserIds.map((uid) => {
+                      const uMsgs = state.messages.filter((m) => m.userId === uid);
+                      const lastMsg = uMsgs[uMsgs.length - 1];
+                      const hasUnread = uMsgs.some((m) => m.sender === 'user' && !m.readByAdmin);
+                      return `
+                        <button onclick="selectAdminChatThread('${esc(uid)}')" class="w-full text-left p-3.5 hover:bg-white transition flex items-center justify-between cursor-pointer ${state.selectedChatUserId === uid ? 'bg-white border-l-4 border-slate-900' : ''}">
+                          <div>
+                            <div class="font-extrabold text-sm text-slate-900">${esc(lastMsg.userName)}</div>
+                            <div class="text-xs text-slate-500 truncate max-w-[180px]">${esc(lastMsg.text)}</div>
                           </div>
+                          ${hasUnread ? `<span class="bg-rose-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-pulse">NEW SMS</span>` : ''}
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                `}
+              </div>
+
+              <div class="md:col-span-2 flex flex-col">
+                ${!state.selectedChatUserId ? `
+                  <div class="flex-1 flex items-center justify-center text-slate-400 text-sm p-6">
+                    Left side se kisi user par click karke SMS dekhein aur reply karein.
+                  </div>
+                ` : (() => {
+                  const chatUser = state.users.find((u) => u.id === state.selectedChatUserId);
+                  const thread = state.messages.filter((m) => m.userId === state.selectedChatUserId);
+                  return `
+                    <div class="p-3.5 border-b border-slate-200 bg-slate-50 font-extrabold text-sm">
+                      Chat with ${esc(chatUser ? chatUser.name : 'User')} (${esc(chatUser ? chatUser.mobile : '')})
+                    </div>
+                    <div id="admin-chat-messages" class="flex-1 p-4 space-y-3 overflow-y-auto max-h-[340px]">
+                      ${thread.map((m) => `
+                        <div class="flex flex-col max-w-[75%] ${m.sender === 'admin' ? 'ml-auto items-end' : 'mr-auto items-start'}">
+                          <div class="px-3.5 py-2 rounded-2xl text-sm ${m.sender === 'admin' ? 'bg-slate-900 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'}">
+                            ${esc(m.text)}
+                          </div>
+                          <span class="text-[10px] text-slate-400 mt-1">${esc(m.timestamp)}</span>
                         </div>
-                        {hasUnread && (
-                          <span className="bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            NEW SMS
-                          </span>
-                        )}
+                      `).join('')}
+                    </div>
+                    <form onsubmit="handleAdminSendReply(event)" class="p-3 border-t border-slate-200 flex gap-2">
+                      <input id="admin-reply-input" type="text" placeholder="User ko reply likhein..." required
+                        class="flex-1 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none" />
+                      <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer">
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                        <span>Reply</span>
                       </button>
-                    );
-                  })}
-                </div>
-              )}
+                    </form>
+                  `;
+                })()}
+              </div>
             </div>
+          ` : ''}
 
-            {/* Right Conversation Area */}
-            <div className="md:col-span-2 flex flex-col">
-              {!selectedChatUserId ? (
-                <div className="flex-1 flex items-center justify-center text-slate-400 text-sm p-6">
-                  Left side se kisi user par click karke SMS dekhein aur reply karein.
+          <!-- ADMIN TAB 5: SITE SETTINGS, QR CODE & SERVICES -->
+          ${state.adminTab === 'settings' ? `
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- 1. QR Code Upload -->
+              <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <h3 class="font-extrabold text-slate-800 flex items-center gap-2 border-b pb-3">
+                  <i data-lucide="qr-code" class="w-5 h-5 text-indigo-600"></i>
+                  <span>Payment QR Code Lagayein</span>
+                </h3>
+                <div class="flex flex-col sm:flex-row items-center gap-4">
+                  <img src="${state.settings.qrImage}" alt="Current QR" class="w-36 h-36 object-contain border border-slate-200 rounded-2xl p-2 bg-slate-50" />
+                  <div class="flex-1 space-y-2.5 w-full">
+                    <label class="block text-xs font-bold text-slate-700">Upload New QR Image (PhonePe / GPay / Paytm)</label>
+                    <input type="file" accept="image/*" onchange="handleQrUpload(this)"
+                      class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+                    <p class="text-[11px] text-slate-400">Image Base64 me save hoti hai taaki GitHub Pages par bina server ke kaam kare.</p>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <div className="p-3.5 border-b border-slate-200 bg-slate-50 font-bold text-sm">
-                    Chat with {users.find((u) => u.id === selectedChatUserId)?.name} (
-                    {users.find((u) => u.id === selectedChatUserId)?.mobile})
+              </div>
+
+              <!-- 2. Website Branding, Theme & Password -->
+              <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <h3 class="font-extrabold text-slate-800 flex items-center gap-2 border-b pb-3">
+                  <i data-lucide="palette" class="w-5 h-5 text-purple-600"></i>
+                  <span>Website Theme & Settings</span>
+                </h3>
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Theme Color Chunein</label>
+                    <div class="flex flex-wrap gap-2">
+                      ${Object.entries(THEMES).map(([k, v]) => `
+                        <button type="button" onclick="changeSiteTheme('${k}')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${state.settings.theme === k ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-700 border-slate-200'}">
+                          ${v.name}
+                        </button>
+                      `).join('')}
+                    </div>
                   </div>
-                  <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[340px]">
-                    {messages
-                      .filter((m) => m.userId === selectedChatUserId)
-                      .map((m) => (
-                        <div
-                          key={m.id}
-                          className={`flex flex-col max-w-[75%] ${
-                            m.sender === 'admin' ? 'ml-auto items-end' : 'mr-auto items-start'
-                          }`}
-                        >
-                          <div
-                            className={`px-3.5 py-2 rounded-2xl text-sm ${
-                              m.sender === 'admin'
-                                ? 'bg-slate-900 text-white rounded-br-none'
-                                : 'bg-slate-100 text-slate-800 rounded-bl-none'
-                            }`}
-                          >
-                            {m.text}
-                          </div>
-                          <span className="text-[10px] text-slate-400 mt-1">{m.timestamp}</span>
-                        </div>
-                      ))}
-                  </div>
-                  <form onSubmit={handleAdminReply} className="p-3 border-t border-slate-200 flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="User ko reply likhein..."
-                      value={adminReplyText}
-                      onChange={(e) => setAdminReplyText(e.target.value)}
-                      className="flex-1 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Reply</span>
+                  <form onsubmit="handleSaveSiteSettings(event)" class="space-y-3 pt-1">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Website Name</label>
+                        <input id="set-site-name" type="text" value="${esc(state.settings.siteName)}" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold" />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">UPI ID</label>
+                        <input id="set-upi" type="text" value="${esc(state.settings.upiId)}" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" />
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-slate-700 mb-1">Tagline</label>
+                      <input id="set-tagline" type="text" value="${esc(state.settings.tagline)}" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Min Add Balance (₹)</label>
+                        <input id="set-min-dep" type="number" value="${state.settings.minDeposit}" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold" />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Admin Password</label>
+                        <input id="set-admin-pass" type="text" value="${esc(state.settings.adminPass)}" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono" />
+                      </div>
+                    </div>
+                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer">
+                      Save Website Settings
                     </button>
                   </form>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: QR CODE UPLOAD, SITE THEME CUSTOMIZATION & ADD NEW SERVICES */}
-        {adminTab === 'settings' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 1. Payment QR Code & UPI Settings */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
-                <QrCode className="w-5 h-5 text-blue-600" />
-                <span>Apna Payment QR Code Lagayein</span>
-              </h3>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <img
-                  src={settings.qrImage}
-                  alt="Current QR"
-                  className="w-36 h-36 object-contain border border-slate-200 rounded-xl p-2 bg-slate-50"
-                />
-                <div className="flex-1 space-y-2.5 w-full">
-                  <label className="block text-xs font-bold text-slate-700">
-                    Upload New QR Photo (PhonePe / GPay / Paytm)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) =>
-                      handleFileUpload(e.target.files[0], (base64) => {
-                        setSettings((prev) => ({ ...prev, qrImage: base64 }));
-                        showToast('Naya QR Code update ho gaya!');
-                      })
-                    }
-                    className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">UPI ID (Optional)</label>
-                    <input
-                      type="text"
-                      value={settings.upiId}
-                      onChange={(e) => setSettings((prev) => ({ ...prev, upiId: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Minimum Add Balance (₹)
-                    </label>
-                    <input
-                      type="number"
-                      value={settings.minDeposit}
-                      onChange={(e) =>
-                        setSettings((prev) => ({ ...prev, minDeposit: Number(e.target.value) || 200 }))
-                      }
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold"
-                    />
-                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 2. Site Name, Theme Color & Admin Password */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
-                <Palette className="w-5 h-5 text-purple-600" />
-                <span>Website Theme & Branding Update</span>
-              </h3>
+              <!-- 3. Add / Manage Services -->
+              <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <h3 class="font-extrabold text-slate-800 flex items-center gap-2 border-b pb-3">
+                  <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i>
+                  <span>Add New Service (User Portal me dikhegi)</span>
+                </h3>
+                <form onsubmit="handleAddNewService(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <input id="new-srv-name" type="text" required placeholder="Service Name (e.g. Admit Card / Result)" class="md:col-span-2 px-3 py-2 border border-slate-300 rounded-xl text-sm" />
+                  <input id="new-srv-fee" type="number" required value="200" placeholder="Fees (₹)" class="px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold" />
+                  <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2 px-4 rounded-xl text-sm cursor-pointer">
+                    + Add Service
+                  </button>
+                  <input id="new-srv-desc" type="text" placeholder="Short Instructions (Optional)" class="md:col-span-4 px-3 py-2 border border-slate-300 rounded-xl text-xs" />
+                </form>
 
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Website Name</label>
-                  <input
-                    type="text"
-                    value={settings.siteName}
-                    onChange={(e) => setSettings((prev) => ({ ...prev, siteName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Tagline</label>
-                  <input
-                    type="text"
-                    value={settings.tagline}
-                    onChange={(e) => setSettings((prev) => ({ ...prev, tagline: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Site Theme Color</label>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(THEMES).map(([key, val]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => {
-                          setSettings((prev) => ({ ...prev, theme: key }));
-                          showToast(`Theme changed to ${val.name}`);
-                        }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
-                          settings.theme === key
-                            ? 'bg-slate-900 text-white border-slate-900'
-                            : 'bg-slate-50 text-slate-700 border-slate-200'
-                        }`}
-                      >
-                        {val.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Admin Login Password</label>
-                  <input
-                    type="text"
-                    value={settings.adminPass}
-                    onChange={(e) => setSettings((prev) => ({ ...prev, adminPass: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Add New Services (Appears on User Dashboard) */}
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b pb-3">
-                <Plus className="w-5 h-5 text-emerald-600" />
-                <span>Add New Service (User Portal me dikhegi)</span>
-              </h3>
-
-              <form onSubmit={handleAddService} className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <input
-                  type="text"
-                  required
-                  placeholder="Service Name (e.g. PAN Card / Admit Card)"
-                  value={newSrvName}
-                  onChange={(e) => setNewSrvName(e.target.value)}
-                  className="md:col-span-2 px-3 py-2 border border-slate-300 rounded-xl text-sm"
-                />
-                <input
-                  type="number"
-                  required
-                  placeholder="Fees (₹)"
-                  value={newSrvFee}
-                  onChange={(e) => setNewSrvFee(e.target.value)}
-                  className="px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold"
-                />
-                <button
-                  type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl text-sm"
-                >
-                  + Add Service
-                </button>
-                <input
-                  type="text"
-                  placeholder="Short Description / Instructions (Optional)"
-                  value={newSrvDesc}
-                  onChange={(e) => setNewSrvDesc(e.target.value)}
-                  className="md:col-span-4 px-3 py-2 border border-slate-300 rounded-xl text-xs"
-                />
-              </form>
-
-              {/* Active Services List */}
-              <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-                {services.map((srv) => (
-                  <div key={srv.id} className="p-3 flex items-center justify-between bg-slate-50/50">
-                    <div>
-                      <div className="font-bold text-sm text-slate-800">
-                        {srv.name} <span className="text-emerald-600 ml-2">(₹{srv.fee})</span>
+                <div class="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden">
+                  ${state.services.map((s) => `
+                    <div class="p-3.5 flex items-center justify-between bg-slate-50/60">
+                      <div>
+                        <div class="font-extrabold text-sm text-slate-800">${esc(s.name)} <span class="text-emerald-600 ml-2">(₹${s.fee})</span></div>
+                        ${s.description ? `<div class="text-xs text-slate-500">${esc(s.description)}</div>` : ''}
                       </div>
-                      {srv.description && <div className="text-xs text-slate-500">{srv.description}</div>}
+                      ${state.services.length > 1 ? `
+                        <button onclick="deleteService('${esc(s.id)}')" class="text-red-500 hover:bg-red-50 p-2 rounded-xl cursor-pointer" title="Delete Service">
+                          <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                      ` : ''}
                     </div>
-                    {services.length > 1 && (
-                      <button
-                        onClick={() => setServices((prev) => prev.filter((s) => s.id !== srv.id))}
-                        className="text-red-500 hover:bg-red-50 p-2 rounded-lg"
-                        title="Delete Service"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+        </main>
+      `;
+    }
+
+    function renderAdminModals() {
+      let html = '';
+
+      // 1. TRANSFER BALANCE MODAL
+      if (state.transferModalUserId) {
+        const user = state.users.find((u) => u.id === state.transferModalUserId);
+        if (user) {
+          html += `
+            <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+              <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between border-b pb-3">
+                  <h3 class="font-extrabold text-slate-900">Transfer Balance: ${esc(user.name)}</h3>
+                  <button onclick="closeTransferModal()" class="cursor-pointer"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
+                </div>
+                <p class="text-xs text-slate-500">Current Balance: <b class="text-emerald-600">₹${user.balance}</b></p>
+                <form onsubmit="executeBalanceTransfer(event)" class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Action Type</label>
+                    <select id="transfer-type" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-bold">
+                      <option value="add">+ Add Balance (Credit)</option>
+                      <option value="deduct">- Deduct Balance (Debit)</option>
+                    </select>
                   </div>
-                ))}
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Amount (₹)</label>
+                    <input id="transfer-amt" type="number" required min="1" value="200" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm font-extrabold" />
+                  </div>
+                  <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2.5 rounded-xl text-sm cursor-pointer">
+                    Confirm Balance Transfer
+                  </button>
+                </form>
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          `;
+        }
+      }
 
-      {/* MODAL 1: TRANSFER BALANCE TO SPECIFIC USER */}
-      {transferUser && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="font-bold text-slate-900">
-                Transfer Balance: {transferUser.name}
-              </h3>
-              <button onClick={() => setTransferUser(null)}>
-                <X className="w-5 h-5 text-slate-400" />
-              </button>
+      // 2. SEND PHOTO + CAPTION NOTIFICATION TO SPECIFIC USER MODAL
+      if (state.notifModalUserId) {
+        const user = state.users.find((u) => u.id === state.notifModalUserId);
+        if (user) {
+          html += `
+            <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+              <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between border-b pb-3">
+                  <div>
+                    <h3 class="font-extrabold text-slate-900">Send Photo Notice to ${esc(user.name)}</h3>
+                    <p class="text-[11px] text-slate-500">Ye photo aur caption sirf ${esc(user.name)} (${esc(user.mobile)}) ke dashboard me dikhega.</p>
+                  </div>
+                  <button onclick="closeNotifModal()" class="cursor-pointer"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
+                </div>
+                <form onsubmit="executeSendTargetedNotif(event)" class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Upload Photo (Admit Card / Receipt / Notice)</label>
+                    <input type="file" accept="image/*" onchange="handleNotifPhotoSelect(this)"
+                      class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 cursor-pointer" />
+                    <img id="notif-img-preview" src="" alt="Preview" class="hidden mt-2 h-32 w-full object-contain rounded-xl border border-slate-200 bg-slate-50" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Caption / Message Likhein</label>
+                    <textarea id="notif-caption-input" rows="3" placeholder="User ke liye message ya caption likhein..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm"></textarea>
+                  </div>
+                  <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span>Send Notification to ${esc(user.name)}</span>
+                  </button>
+                </form>
+              </div>
             </div>
-            <p className="text-xs text-slate-500">
-              Current Balance: <b className="text-emerald-600">₹{transferUser.balance}</b>
-            </p>
-            <form onSubmit={handleTransferBalance} className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTransferType('add')}
-                  className={`py-2 rounded-xl text-xs font-bold border ${
-                    transferType === 'add'
-                      ? 'bg-emerald-600 text-white border-emerald-600'
-                      : 'bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  + Add Balance
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTransferType('deduct')}
-                  className={`py-2 rounded-xl text-xs font-bold border ${
-                    transferType === 'deduct'
-                      ? 'bg-red-600 text-white border-red-600'
-                      : 'bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  - Deduct Balance
-                </button>
-              </div>
-              <input
-                type="number"
-                required
-                min="1"
-                placeholder="Amount (₹)"
-                value={transferAmt}
-                onChange={(e) => setTransferAmt(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold"
-              />
-              <button
-                type="submit"
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-sm"
-              >
-                Confirm Transfer
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+          `;
+        }
+      }
 
-      {/* MODAL 2: SEND PHOTO + CAPTION NOTIFICATION TO SPECIFIC USER */}
-      {notifUser && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div>
-                <h3 className="font-bold text-slate-900">Send Notification to {notifUser.name}</h3>
-                <p className="text-[11px] text-slate-500">
-                  Ye photo aur caption sirf {notifUser.name} ({notifUser.mobile}) ke dashboard me dikhega.
-                </p>
+      // 3. VIEW SPECIFIC USER APPLICATIONS MODAL
+      if (state.viewUserAppsId) {
+        const user = state.users.find((u) => u.id === state.viewUserAppsId);
+        const uApps = state.applications.filter((a) => a.userId === state.viewUserAppsId);
+        if (user) {
+          html += `
+            <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+              <div class="bg-white rounded-2xl max-w-2xl w-full p-5 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between border-b pb-3">
+                  <h3 class="font-extrabold text-slate-900">Applications by ${esc(user.name)} (${esc(user.mobile)})</h3>
+                  <button onclick="closeViewUserAppsModal()" class="cursor-pointer"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
+                </div>
+                ${uApps.length === 0 ? `
+                  <p class="text-sm text-slate-400 py-6 text-center">Is user ne abhi tak koi form submit nahi kiya hai.</p>
+                ` : `
+                  <div class="overflow-x-auto max-h-80">
+                    <table class="w-full text-left text-xs">
+                      <thead class="bg-slate-50 text-slate-600 uppercase">
+                        <tr>
+                          <th class="px-3 py-2">Service</th>
+                          <th class="px-3 py-2">App No.</th>
+                          <th class="px-3 py-2">DOB</th>
+                          <th class="px-3 py-2">Pass / OTP</th>
+                          <th class="px-3 py-2">Fees</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100">
+                        ${uApps.map((a) => `
+                          <tr>
+                            <td class="px-3 py-2 font-bold">${esc(a.serviceName)}</td>
+                            <td class="px-3 py-2 font-mono font-bold">${esc(a.appNumber)}</td>
+                            <td class="px-3 py-2">${esc(a.dob)}</td>
+                            <td class="px-3 py-2 font-mono text-rose-600 font-bold">${esc(a.examPassOtp)}</td>
+                            <td class="px-3 py-2 font-bold text-emerald-600">₹${a.feePaid}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                `}
               </div>
-              <button onClick={() => setNotifUser(null)}>
-                <X className="w-5 h-5 text-slate-400" />
-              </button>
             </div>
+          `;
+        }
+      }
 
-            <form onSubmit={handleSendUserNotification} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Photo Upload Karein (Admit Card / Receipt / Notice)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e.target.files[0], (b64) => setNotifImage(b64))}
-                  className="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700"
-                />
-                {notifImage && (
-                  <img
-                    src={notifImage}
-                    alt="Preview"
-                    className="mt-2 h-32 w-full object-contain rounded-xl border border-slate-200 bg-slate-50"
-                  />
-                )}
-              </div>
+      return html;
+    }
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Caption / Message Likhein
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="User ke liye message ya caption likhein..."
-                  value={notifCaption}
-                  onChange={(e) => setNotifCaption(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"
-              >
-                <Send className="w-4 h-4" />
-                <span>Send Notification to {notifUser.name}</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+    // Initial Render on Page Load
+    render();
+  </script>
+</body>
+</html>
